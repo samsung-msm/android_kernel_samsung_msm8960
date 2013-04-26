@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/module.h>
 #include "msm_sensor.h"
 #define SENSOR_NAME "s5k6a3yx"
 #define PLATFORM_DRIVER_NAME "msm_camera_s5k6a3yx"
@@ -169,7 +170,7 @@ static struct msm_sensor_output_info_t s5k6a3yx_dimensions[] = {
 		.line_length_pclk = 0x0642, /* 1602 */
 		.frame_length_lines = 0x05AA, /* 1450*/
 		.vt_pixel_clk =  72000000, /*76800000*/
-		.op_pixel_clk = 72000000, /*76800000*/
+		.op_pixel_clk = 320000000, /*76800000*/
 		.binning_factor = 1,
 	},
 	/* mode 1 */
@@ -179,7 +180,7 @@ static struct msm_sensor_output_info_t s5k6a3yx_dimensions[] = {
 		.line_length_pclk = 0x0642, /* 1602 */
 		.frame_length_lines = 0x05AA, /* 1450*/
 		.vt_pixel_clk =  72000000, /*76800000*/
-		.op_pixel_clk = 72000000, /*76800000*/
+		.op_pixel_clk = 320000000, /*76800000*/
 		.binning_factor = 1,
 	},
 };

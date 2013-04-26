@@ -13,6 +13,7 @@
 #include <linux/delay.h>
 #include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/module.h>
 /*[[ aswoogi_zsl*/
 #include <linux/atomic.h>
 #include <mach/irqs.h>
@@ -257,6 +258,7 @@ static int msm_ispif_config(struct msm_ispif_params_list *params_list)
 					   ispif_params[i].cid_mask);
 	}
 
+	msm_io_w(0x40, ispif->base + ISPIF_CTRL_ADDR);
 	msm_io_w(ISPIF_IRQ_STATUS_MASK, ispif->base + ISPIF_IRQ_MASK_ADDR);
 	msm_io_w(ISPIF_IRQ_STATUS_MASK, ispif->base + ISPIF_IRQ_CLEAR_ADDR);
 	msm_io_w(ISPIF_IRQ_GLOBAL_CLEAR_CMD, ispif->base +
@@ -772,13 +774,6 @@ static void msm_ispif_release(struct v4l2_subdev *sd)
 {
 	struct ispif_device *ispif =
 	    (struct ispif_device *)v4l2_get_subdevdata(sd);
-
-        BUG_ON(!ispif);
-
-	if (!ispif->base) {
-	        pr_err("%s: ispif base is NULL\n", __func__);
-	        return;
-        }
 
 	if (ispif->csid_version == CSID_VERSION_V2)
 		msm_cam_clk_enable(&ispif->pdev->dev, ispif_clk_info,

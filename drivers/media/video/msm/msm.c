@@ -16,6 +16,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/ioctl.h>
+#include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/proc_fs.h>
 #include "msm.h"
@@ -1990,6 +1991,7 @@ static long msm_ioctl_server(struct file *fp, unsigned int cmd,
 		break;
 
 	default:
+		pr_info("%s: trouble recognizing ioctl, break", __func__);
 		break;
 	}
 	return rc;
@@ -2046,6 +2048,8 @@ static long msm_v4l2_evt_notify(struct msm_cam_media_controller *mctl,
 		ERR_COPY_FROM_USER();
 		return -EFAULT;
 	}
+
+	v4l2_ev.id = 0;
 
 	pcam = mctl->sync.pcam_sync;
 	ktime_get_ts(&v4l2_ev.timestamp);
@@ -2409,24 +2413,6 @@ static int msm_setup_config_dev(int node, char *device_name)
 	return rc;
 }
 
-#ifdef CONFIG_MSM_IOMMU
-static int camera_register_domain(void)
-{
-        struct msm_iova_partition camera_fw_partition = {
-                .start = SZ_128K,
-                .size = SZ_2G - SZ_128K,
-        };
-        struct msm_iova_layout camera_fw_layout = {
-                .partitions = &camera_fw_partition,
-                .npartitions = 1,
-                .client_name = "camera_isp",
-                .domain_flags = 0,
-        };
-
-        return msm_register_domain(&camera_fw_layout);
-}
-#endif
-
 static int msm_setup_server_dev(int node, char *device_name)
 {
 	int rc = -ENODEV;
@@ -2472,22 +2458,6 @@ static int msm_setup_server_dev(int node, char *device_name)
 		g_server_dev.server_command_queue.pvdev);
 	if (rc < 0)
 		pr_err("%s failed to initialize event queue\n", __func__);
-
-#ifdef CONFIG_MSM_IOMMU
-        g_server_dev.domain_num = camera_register_domain();
-        if (g_server_dev.domain_num < 0) {
-                pr_err("%s: could not register domain\n", __func__);
-                rc = -ENODEV;
-                return rc;
-        }
-        g_server_dev.domain =
-                msm_get_iommu_domain(g_server_dev.domain_num);
-        if (!g_server_dev.domain) {
-                pr_err("%s: cannot find domain\n", __func__);
-                rc = -ENODEV;
-                return rc;
-        }
-#endif
 
 	return rc;
 }
