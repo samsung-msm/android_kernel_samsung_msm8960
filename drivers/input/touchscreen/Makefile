@@ -94,6 +94,7 @@ obj-$(CONFIG_TOUCHSCREEN_LGE_SYNAPTICS) += touch_synaptics.o
 obj-$(CONFIG_TOUCHSCREEN_LGE_SYNAPTICS) += touch_synaptics_ds4_fw_upgrade.o
 obj-$(CONFIG_TOUCHSCREEN_FT5X06)	+= ft5x06_ts.o
 obj-$(CONFIG_TOUCHSCREEN_MXT224)	+= mxt224e.o
+obj-$(CONFIG_TOUCHSCREEN_MXT224S)        += mxt224s.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4)		+= synaptics_i2c_rmi4.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_RMI4_DEV)	+= synaptics_rmi_dev.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_FW_UPDATE)	+= synaptics_fw_update.o

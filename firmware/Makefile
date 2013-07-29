@@ -184,6 +184,8 @@ fw-shipped-$(CONFIG_TOUCHSCREEN_MMS144) += tsp_melfas/CORE.fw
 fw-shipped-$(CONFIG_TOUCHSCREEN_MMS144) += tsp_melfas/PRIV.fw
 fw-shipped-$(CONFIG_TOUCHSCREEN_MMS144) += tsp_melfas/PUBL.fw
 
+fw-shipped-$(CONFIG_TOUCHSCREEN_MXT224S) += tsp_atmel/mxt224s.fw
+
 fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
 
 # Directories which we _might_ need to create, so we have a rule for them.

@@ -205,6 +205,8 @@ endif
 endif
 obj-$(CONFIG_FB_MSM_MIPI_RENESAS_TFT_VIDEO_FULL_HD_PT_PANEL) += mipi_renesas_tft_video_full_hd_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_SAMSUNG_OCTA_VIDEO_FULL_HD_PT_PANEL) += mipi_samsung_octa_video_full_hd_pt.o mipi_magna_octa_video_full_hd_pt.o smart_mtp_se6e8fa.o
+
+obj-$(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) += mipi_magna_oled_video_wvga_pt.o smart_mtp_ea8868.o
 endif
 
 obj-$(CONFIG_FB_MSM_LCDC_PANEL) += lcdc_panel.o
