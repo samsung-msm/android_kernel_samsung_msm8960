@@ -381,8 +381,13 @@ static int is_pm8921_sec_charger_using(void)
 	return 1;
 }
 
+<<<<<<< HEAD
 #define LPM_ENABLE_BIT	BIT(2)
 static int pm8921_chg_set_lpm(struct pm8921_chg_chip *chip, int enable)
+=======
+#if !defined(CONFIG_MACH_APEXQ)
+static int sec_bat_get_fuelgauge_data(struct pm8921_chg_chip *chip, int type)
+>>>>>>> a7c5d2d... ApexQ: Initial bring-up
 {
 	int rc;
 	u8 reg;
@@ -416,6 +421,7 @@ static int pm_chg_write(struct pm8921_chg_chip *chip, u16 addr, u8 reg)
 
 	return rc;
 }
+#endif
 
 static int pm_chg_masked_write(struct pm8921_chg_chip *chip, u16 addr,
 							u8 mask, u8 val)
@@ -1687,8 +1693,13 @@ static int get_prop_battery_uvolts(struct pm8921_chg_chip *chip)
 						result.measurement);
 	return (int)result.physical;
 }
+<<<<<<< HEAD
 
 static int voltage_based_capacity(struct pm8921_chg_chip *chip)
+=======
+#if !defined(CONFIG_BATTERY_MAX17040) && !defined(CONFIG_MACH_APEXQ)
+static unsigned int voltage_based_capacity(struct pm8921_chg_chip *chip)
+>>>>>>> a7c5d2d... ApexQ: Initial bring-up
 {
 	int current_voltage_uv = get_prop_battery_uvolts(chip);
 	int current_voltage_mv = current_voltage_uv / 1000;

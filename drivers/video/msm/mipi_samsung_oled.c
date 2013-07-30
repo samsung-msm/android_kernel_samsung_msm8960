@@ -642,6 +642,8 @@ static void mipi_samsung_disp_early_suspend(struct early_suspend *h)
 	}
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
 	mipi_samsung_disp_send_cmd(mfd, PANEL_EARLY_OFF, true);
+#elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT)
+	mipi_samsung_disp_send_cmd(mfd, PANEL_OFF, false);
 #endif
 	mfd->resume_state = MIPI_SUSPEND_STATE;
 }

@@ -79,6 +79,9 @@
 #ifdef CONFIG_FM_SI4705
 #define MSM_SI47XX_I2C_BUS_ID   26
 #endif
+#if defined(CONFIG_KEYBOARD_ADP5588) || defined(CONFIG_KEYBOARD_ADP5588_MODULE)
+#define MSM_ADP5588_KEYS_BUS_ID	20
+#endif
 
 /*I2C BUS ID*/
 #define I2C_LEDS_BUS_ID			21

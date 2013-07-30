@@ -1097,6 +1097,23 @@ static int __init get_pvs_bin(u32 pte_efuse)
 	return pvs_bin;
 }
 
+#if defined(CONFIG_MACH_APEXQ)
+uint32_t global_sec_pvs_value;
+static int __init sec_pvs_setup(char *str)
+{
+	uint32_t sec_pvs_value = memparse(str, &str);
+
+	global_sec_pvs_value = sec_pvs_value;
+	pr_info("%s: global_sec_pvs_value=%x\n",
+			__func__, global_sec_pvs_value);
+
+	return 1;
+}
+
+__setup("sec_pvs=", sec_pvs_setup);
+
+#endif
+
 static struct pvs_table * __init select_freq_plan(u32 pte_efuse_phys,
 			struct pvs_table (*pvs_tables)[NUM_PVS])
 {
@@ -1119,7 +1136,13 @@ static struct pvs_table * __init select_freq_plan(u32 pte_efuse_phys,
 	speed_bin = bin_idx;
 	pvs_bin = tbl_idx;
 #endif
-	
+
+#if defined(CONFIG_MACH_APEXQ)
+	if (global_sec_pvs_value == 0xfafa) {
+		tbl_idx = 0;
+	}
+#endif 
+
 	return &pvs_tables[bin_idx][tbl_idx];
 }
 

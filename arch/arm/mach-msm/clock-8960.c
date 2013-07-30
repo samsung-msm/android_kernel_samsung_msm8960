@@ -6727,7 +6727,11 @@ static void __init reg_init(void)
 		rmwreg(0x2, DSI2_BYTE_NS_REG, 0x7);
 
 	/* Source the dsi1_esc_clk from the DSI1 PHY PLLs */
+#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT)
+	rmwreg(0x0, DSI1_ESC_NS_REG, 0x7);
+#else
 	rmwreg(0x1, DSI1_ESC_NS_REG, 0x7);
+#endif
 
 	/*
 	 * Source the sata_phy_ref_clk from PXO and set predivider of
