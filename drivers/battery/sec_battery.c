@@ -1784,7 +1784,9 @@ static void sec_bat_set_polling(
 	dev_dbg(battery->dev, "%s: End\n", __func__);
 }
 
+if #defined(CONFIG_CHARGER_MAX77693)
 extern void max77693_muic_monitor_status(void);
+#endif
 static void sec_bat_monitor_work(
 				struct work_struct *work)
 {
@@ -1851,7 +1853,7 @@ continue_monitor:
 	sec_bat_set_polling(battery);
 
 	/* check muic cable status */
-#if defined(CONFIG_MACH_JF)
+#if defined(CONFIG_CHARGER_MAX77693)
 	max77693_muic_monitor_status();
 #endif
 
