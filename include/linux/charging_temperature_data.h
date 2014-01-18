@@ -103,7 +103,7 @@ static const struct pm8xxx_adc_map_pt temp_table[] = {
 	{41954,	-200},
 };
 
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2)
 static const struct pm8xxx_adc_map_pt temp_table[] = {
 	{26537,	 800},
 	{26849,	 750},

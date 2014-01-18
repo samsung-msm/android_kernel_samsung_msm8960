@@ -599,7 +599,7 @@ static struct snd_kcontrol_new msm_voice_controls[] = {
 				msm_voice_mute_get, msm_voice_mute_put),
 #if defined(CONFIG_MACH_JF_VZW) || defined(CONFIG_MACH_JF_USC)|| \
 	defined(CONFIG_MACH_MELIUS_USC) || defined(CONFIG_MACH_SERRANO_USC) || \
-	defined(CONFIG_MACH_SERRANO_VZW) || defined(CONFIG_MACH_M2_VZW)
+	defined(CONFIG_MACH_SERRANO_VZW) || defined(CONFIG_MACH_M2)
 	/* 8 level Voice Rx volume for VZW and USC */
 	SOC_SINGLE_EXT("Voice Rx Volume", SND_SOC_NOPM, 0, 7, 0,
 				msm_voice_volume_get, msm_voice_volume_put),
