@@ -4,6 +4,7 @@
 #	http://www.samsung.com/
 
 obj-$(CONFIG_SAMSUNG_MHL_8240) += sii8240/
+
 ifeq ($(CONFIG_VIDEO_MHL_V2),y)
 ifneq ($(CONFIG_SAMSUNG_MHL_8240),y)
 obj-y += sii9234/

@@ -97,7 +97,9 @@ struct external_common_state_type {
 	int (*hpd_feature)(int on);
 #endif
 	uint16 audio_speaker_data;
+#ifdef CONFIG_SAMSUNG_MHL_8240
 	boolean sii8240_connected;
+#endif
 };
 
 /* The external interface driver needs to initialize the common state. */

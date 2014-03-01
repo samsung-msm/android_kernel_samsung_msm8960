@@ -49,6 +49,11 @@ config MHL_NEW_CBUS_MSC_CMD
 	If device support mhl version2, this feature should be Y here.
 	To distinguish TA and USB charger, mhl_version2 support new msc cmd
 	different from mhl_v1.
+	  This is a MHL v2 driver customized for Qualcomm MSM8960 based chipsets.
+
+config SAMSUNG_MHL_8240
+	bool "Support Samsung MHL 8240"
+	default n
 
 config MHL_VERSION
 	hex "Number of MHL Version"
@@ -65,3 +70,9 @@ config MHL_D3_SUPPORT
 	---help---
 	Power saving mode of MHL chip
 endmenu
+=======
+	  MHL Version
+	  For example, those device compliant
+	  with MHL Specification version 2.0
+	  shell set this MHL_VERSION to 0x20
+>>>>>>> 1521f46... jf: initial bringup
