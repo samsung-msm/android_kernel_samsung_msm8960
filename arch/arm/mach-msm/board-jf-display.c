@@ -827,7 +827,6 @@ static int mipi_dsi_power_samsung(int on)
 	return 0;
 }
 
-#if defined(CONFIG_SUPPORT_SECOND_POWER)
 static int mipi_panel_power_samsung(int on)
 {
 	int rc;
@@ -847,16 +846,13 @@ static int mipi_panel_power_samsung(int on)
 #endif
 	return rc;
 }
-#endif
 
 static char mipi_dsi_splash_is_enabled(void);
 
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.power_common = mipi_power_samsung_common,
 	.dsi_power_save = mipi_dsi_power_samsung,
-#if defined(CONFIG_SUPPORT_SECOND_POWER)
 	.panel_power_save = mipi_panel_power_samsung,
-#endif
 	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 	.active_reset = active_reset,
 };

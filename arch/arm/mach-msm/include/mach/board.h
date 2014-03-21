@@ -491,6 +491,9 @@ struct mipi_dsi_platform_data {
 	int (*get_lane_config)(void);
 	char (*splash_is_enabled)(void);
 	int target_type;
+#ifdef CONFIG_MACH_JF
+	int (*panel_power_save)(int on);
+#endif
 	void (*lcd_rst_up)(void);
 	void (*lcd_rst_down)(void);
 #if defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
