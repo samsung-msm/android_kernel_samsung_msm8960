@@ -385,17 +385,8 @@ static bool dsi_power_on;
 static bool oled_power_on;
 
 /* [junesok] Power on for samsung oled */
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-#define LCD_22V_EN	33
-#define PMIC_GPIO_LED_DRIVER 31
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-#define LCD_22V_EN	33
-#define PMIC_GPIO_LED_DRIVER_REV00 28
-#define PMIC_GPIO_LED_DRIVER_REV10 31	
-#else
 #define LCD_22V_EN	69
 #define PMIC_GPIO_LED_DRIVER 27
-#endif
 #define PMIC_GPIO_LCD_RST 43
 
 enum DSI_BLOCK_POWER {
@@ -425,16 +416,7 @@ void pull_ldi_reset_up(void)
 #if defined(CONFIG_SUPPORT_DISPLAY_OCTA_TFT)
 static int gpio43;	/* MLCD_RST */
 static int gpio27;	/* LED_DRIVER */
-#if defined(CONFIG_MACH_JACTIVE_ATT)
-static int gpio33;
-#endif
 static struct regulator *reg_L15;
-#if defined(CONFIG_MACH_JACTIVE_EUR) || defined(CONFIG_MACH_JACTIVE_ATT)
-static struct regulator *reg_L16;
-#endif
-#if defined(CONFIG_MACH_JACTIVE_EUR) || defined(CONFIG_MACH_JACTIVE)
-static struct regulator *reg_LVS1;
-#endif
 #else
 static struct regulator *reg_L30;
 #endif
@@ -513,38 +495,6 @@ static int mipi_dsi_power(int enable)
 static int mipi_dsi_power_tft_request(void)
 {
 	int rc = 0;
-#if defined(CONFIG_MACH_JACTIVE_ATT) 
-	if (system_rev < 10){
-		gpio33 = PM8921_GPIO_PM_TO_SYS(LCD_22V_EN);
-		rc = gpio_request(gpio33, "led_dirver");
-		if (rc) {
-			pr_err("request gpio lcd_22v_en failed, rc=%d\n", rc);
-			return -ENODEV;
-		}
-		rc = pm8xxx_gpio_config(gpio33, &gpio43_param);
-		if (rc) {
-			pr_err("gpio_config lcd_22v_en failed (3), rc=%d\n", rc);
-			return -EINVAL;
-		}
-	}
-	else{
-		pr_info("[lcd] request gpio lcd_22v_en\n");
-		rc = gpio_request(LCD_22V_EN, "lcd_22v_en");
-
-		if (rc) {
-			gpio_free(LCD_22V_EN);
-			rc = gpio_request(LCD_22V_EN, "lcd_22v_en");
-			if(rc){
-				pr_err("request gpio lcd_22v_en failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
-
-		pr_info("[lcd] configure LCD_22V_EN\n");
-		gpio_tlmm_config(GPIO_CFG(LCD_22V_EN,  0, GPIO_CFG_OUTPUT,
-		GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
-	}
-#else
 	pr_info("[lcd] request gpio lcd_22v_en\n");
 	rc = gpio_request(LCD_22V_EN, "lcd_22v_en");
 
@@ -556,7 +506,6 @@ static int mipi_dsi_power_tft_request(void)
 	pr_info("[lcd] configure LCD_22V_EN\n");
 	gpio_tlmm_config(GPIO_CFG(LCD_22V_EN,  0, GPIO_CFG_OUTPUT,
 		GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
-#endif
 
 	if (system_rev == 0) {
 		gpio43 = PM8921_GPIO_PM_TO_SYS(
@@ -574,15 +523,7 @@ static int mipi_dsi_power_tft_request(void)
 			return -EINVAL;
 		}
 	}
-#if defined(CONFIG_MACH_JACTIVE_ATT)
-	if (system_rev < 10)
-		gpio27 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LED_DRIVER_REV00);
-	else
-		gpio27 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LED_DRIVER_REV10);
-#else
 	gpio27 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LED_DRIVER);
-#endif
-		
 
 	rc = gpio_request(gpio27, "led_dirver");
 	if (rc) {
@@ -595,14 +536,7 @@ static int mipi_dsi_power_tft_request(void)
 		pr_err("gpio_config led_dirver failed (3), rc=%d\n", rc);
 		return -EINVAL;
 	}
-#if defined(CONFIG_MACH_JACTIVE_ATT)
-	if(system_rev < 10)
-		gpio_direction_output(gpio33, 0);
-	else
-		gpio_direction_output(LCD_22V_EN, 0);	
-#else
 	gpio_direction_output(LCD_22V_EN, 0);
-#endif
 	if (system_rev == 0)
 		gpio_direction_output(gpio43, 0);
 	else
@@ -623,31 +557,6 @@ static int mipi_panel_power_tft(int enable)
 
 	pr_info("%s %d", __func__, enable);
 	if (enable) {
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		rc = regulator_set_optimum_mode(reg_LVS1, 100000); /*IOVDD */
-		if (rc < 0) {
-			pr_err("set_optimum_mode LVS1 failed, rc=%d\n", rc);
-			return -EINVAL;
-		}
-		rc = regulator_enable(reg_LVS1);
-		if (rc) {
-			pr_err("enable LVS1 failed, rc=%d\n", rc);
-			return -ENODEV;
-		}
-#elif defined(CONFIG_MACH_JACTIVE)
-		if (system_rev >= 11) {
-			rc = regulator_set_optimum_mode(reg_LVS1, 100000); /*IOVDD */
-			if (rc < 0) {
-				pr_err("set_optimum_mode LVS1 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			rc = regulator_enable(reg_LVS1);
-			if (rc) {
-				pr_err("enable LVS1 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
-#endif
 
 		rc = regulator_set_optimum_mode(reg_L15, 100000); /*IOVDD */
 		if (rc < 0) {
@@ -660,14 +569,7 @@ static int mipi_panel_power_tft(int enable)
 			return -ENODEV;
 		}
 
-#if defined(CONFIG_MACH_JACTIVE_ATT)
-	if(system_rev < 10)
-		gpio_direction_output(gpio33, 1);
-	else
 		gpio_direction_output(LCD_22V_EN, 1);
-#else
-		gpio_direction_output(LCD_22V_EN, 1);
-#endif
 
 		/*active_reset_ldi(gpio43);*/
 		if (system_rev == 0)
@@ -679,39 +581,6 @@ static int mipi_panel_power_tft(int enable)
 
 		msleep(20);
 
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		if( system_rev >= 15 ) // rev0.5 + 10
-		{
-			rc = regulator_set_optimum_mode(reg_L16, 100000); /*IOVDD */
-			if (rc < 0) {
-				pr_err("set_optimum_mode L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			rc = regulator_enable(reg_L16);
-			if (rc) {
-				pr_err("enable L16 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-			
-			msleep ( 10 );
-		}
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-		if( system_rev >= 11 ) // rev0.3 + 8
-		{
-			rc = regulator_set_optimum_mode(reg_L16, 100000); /*IOVDD */
-			if (rc < 0) {
-				pr_err("set_optimum_mode L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			rc = regulator_enable(reg_L16);
-			if (rc) {
-				pr_err("enable L16 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-			
-			msleep ( 10 );
-		}
-#endif
 		gpio_direction_output(gpio27, 1);/*LED_DRIVER(gpio27);*/
 	} else {
 		if (system_rev == 0)
@@ -720,14 +589,7 @@ static int mipi_panel_power_tft(int enable)
 			pm8xxx_mpp_config(
 				PM8921_MPP_PM_TO_SYS(MLCD_RST_MPP2),
 				&MLCD_RESET_LOW_CONFIG);
-#if defined(CONFIG_MACH_JACTIVE_ATT)
-		if(system_rev < 10)
-			gpio_direction_output(gpio33, 0);
-		else
-			gpio_direction_output(LCD_22V_EN, 0);	
-#else
 		gpio_direction_output(LCD_22V_EN, 0);
-#endif
 		usleep(2000); /*1ms delay(minimum) required between VDD off and AVDD off*/
 
 		rc = regulator_set_optimum_mode(reg_L15, 100);
@@ -744,65 +606,6 @@ static int mipi_panel_power_tft(int enable)
 
 		gpio_direction_output(gpio27, 0);/*LED_DRIVER(gpio27);*/
 
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		if( system_rev >= 15 ) // rev0.5 + 10
-		{
-			msleep ( 10 );
-			rc = regulator_set_optimum_mode(reg_L16, 100);
-			if (rc < 0) {
-				pr_err("set_optimum_mode L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			
-			rc = regulator_disable(reg_L16);
-			if (rc) {
-				pr_err("disable reg_L16 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-		if( system_rev >= 11 ) // rev0.3 + 8
-		{
-			msleep ( 10 );
-			rc = regulator_set_optimum_mode(reg_L16, 100);
-			if (rc < 0) {
-				pr_err("set_optimum_mode L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			
-			rc = regulator_disable(reg_L16);
-			if (rc) {
-				pr_err("disable reg_L16 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
-#endif
-
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		rc = regulator_set_optimum_mode(reg_LVS1, 100);
-		if (rc < 0) {
-			pr_err("set_optimum_mode LVS1 failed, rc=%d\n", rc);
-			return -EINVAL;
-		}
-		rc = regulator_disable(reg_LVS1);
-		if (rc) {
-			pr_err("disable reg_LVS1 failed, rc=%d\n", rc);
-			return -ENODEV;
-		}
-#elif defined(CONFIG_MACH_JACTIVE)
-		if (system_rev >= 11) {
-			rc = regulator_set_optimum_mode(reg_LVS1, 100);
-			if (rc < 0) {
-				pr_err("set_optimum_mode LVS1 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-			rc = regulator_disable(reg_LVS1);
-			if (rc) {
-				pr_err("disable reg_LVS1 failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
-#endif
 		msleep(20);
 	}
 
@@ -981,57 +784,6 @@ static int mipi_oled_power_set(void)
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		if( system_rev >= 15 ) // rev0.5 + 10
-		{
-			reg_L16 = regulator_get(NULL, "8921_l16");
-			if (IS_ERR_OR_NULL(reg_L16)) {
-				pr_err("could not get 8921_L16, rc = %ld\n",
-						PTR_ERR(reg_L16));
-				return -ENODEV;
-			}
-			
-			rc = regulator_set_voltage(reg_L16, 3000000, 3000000);
-			if (rc) {
-				pr_err("set_voltage L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-		}
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-		if( system_rev >= 11 ) // rev0.3 + 8
-		{
-			reg_L16 = regulator_get(NULL, "8921_l16");
-			if (IS_ERR_OR_NULL(reg_L16)) {
-				pr_err("could not get 8921_L16, rc = %ld\n",
-						PTR_ERR(reg_L16));
-				return -ENODEV;
-			}
-			
-			rc = regulator_set_voltage(reg_L16, 3000000, 3000000);
-			if (rc) {
-				pr_err("set_voltage L16 failed, rc=%d\n", rc);
-				return -EINVAL;
-			}
-		}
-#endif
-
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-		reg_LVS1 = regulator_get(NULL, "8921_lvs1");
-		if (IS_ERR_OR_NULL(reg_LVS1)) {
-			pr_err("could not get 8917_LVS1, rc = %ld\n",
-					PTR_ERR(reg_LVS1));
-			return -ENODEV;
-		}
-#elif defined(CONFIG_MACH_JACTIVE)
-		if (system_rev >=11) {
-			reg_LVS1 = regulator_get(NULL, "8921_lvs1");
-			if (IS_ERR_OR_NULL(reg_LVS1)) {
-				pr_err("could not get 8917_LVS1, rc = %ld\n",
-						PTR_ERR(reg_LVS1));
-				return -ENODEV;
-			}
-		}
-#endif
 #endif
 
 #if defined(CONFIG_SUPPORT_DISPLAY_OCTA_TFT)

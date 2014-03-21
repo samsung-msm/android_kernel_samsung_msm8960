@@ -65,18 +65,10 @@ static struct rfkill *bt_rfkill;
 
 int get_gpio_hwrev(int gpio)
 {
-#if defined(CONFIG_MACH_JF_SPR) || defined(CONFIG_MACH_JF_VZW) || defined(CONFIG_MACH_JF_USC) || defined(CONFIG_MACH_JF_LGT)
-	if(system_rev >= BOARD_REV09) {
-		if (gpio == GPIO_BT_HOST_WAKE)
-			return BT_HOST_WAKE_REV8;
-	}
-#else
-/*if defined(CONFIG_MACH_JF_SPR) || defined(CONFIG_MACH_JF_VZW)*/
 	if(system_rev >= BOARD_REV08) {
 		if (gpio == GPIO_BT_HOST_WAKE)
 			return BT_HOST_WAKE_REV8;
 	}
-#endif
 	return gpio;
 }
 

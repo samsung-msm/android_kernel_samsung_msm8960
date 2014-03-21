@@ -155,12 +155,7 @@ static struct pm8xxx_gpio_init pm8917_gpios[] __initdata = {
 	PM8921_GPIO_OUTPUT(26, 1, HIGH), /* Backlight: on */
 	PM8921_GPIO_OUTPUT_BUFCONF(36, 1, LOW, OPEN_DRAIN),
 	PM8921_GPIO_OUTPUT_FUNC(38, 0, PM_GPIO_FUNC_2),
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-	PM8921_GPIO_OUTPUT(33, 0, LOW), /* FLASH_SET */
-	PM8921_GPIO_OUTPUT(24, 0, LOW), /* FLASH_EN */
-#else
 	PM8921_GPIO_OUTPUT(33, 0, HIGH),
-#endif
 	PM8921_GPIO_OUTPUT(20, 0, HIGH),
 	PM8921_GPIO_INPUT(35, PM_GPIO_PULL_UP_30),
 	PM8921_GPIO_INPUT(30, PM_GPIO_PULL_UP_30),
@@ -170,20 +165,15 @@ static struct pm8xxx_gpio_init pm8917_gpios[] __initdata = {
 	PM8921_GPIO_INPUT(12, PM_GPIO_PULL_UP_30),     /* PCIE_WAKE_N */
 };
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-#else
 /* Initial PM8917 SD Card Detection Pin */
 static struct pm8xxx_gpio_init pm8917_sd_det[] __initdata = {
 	PM8921_GPIO_INPUT(33, PM_GPIO_PULL_NO),
 };
-#endif
 
-#if !defined(CONFIG_MACH_JFVE_EUR)
 /* PM8917 GPIO NC state */
 static struct pm8xxx_gpio_init pm8917_nc[] __initdata = {
 	PM8921_GPIO_INPUT(25, PM_GPIO_PULL_DN),
 };
-#endif
 
 /* PM8921 GPIO 42 remaps to PM8917 GPIO 8 */
 static struct pm8xxx_gpio_init pm8917_cdp_kp_gpios[] __initdata = {
@@ -229,39 +219,15 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
 {
 	int i, rc;
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-	printk("%s Enter \n", __func__);
-	if (socinfo_get_pmic_model() != PMIC_MODEL_PM8917)
-		printk("PM8921 system_rev = %d\n", system_rev);
-	else
-		printk("PM8917 system_rev = %d\n", system_rev);
-#endif
-
 	if (socinfo_get_pmic_model() != PMIC_MODEL_PM8917)
 		apq8064_configure_gpios(pm8921_gpios, ARRAY_SIZE(pm8921_gpios));
 	else {
 		apq8064_configure_gpios(pm8917_gpios, ARRAY_SIZE(pm8917_gpios));
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-#else
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO) || defined(CONFIG_MACH_JF_EUR)
 		if (system_rev >= BOARD_REV09)
-#elif defined(CONFIG_MACH_JFVE_EUR)
-		if (system_rev >= BOARD_REV00)
-#else /* VZW/SPT/USCC */
-		if (system_rev >= BOARD_REV10)
-#endif
 			apq8064_configure_gpios(pm8917_sd_det, ARRAY_SIZE(pm8917_sd_det));
-#endif
-
-#if !defined(CONFIG_MACH_JFVE_EUR)
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO)
-		if (system_rev >= BOARD_REV11)
-#else /* EUR/VZW/SPR/USC/CRI */
 		if (system_rev >= BOARD_REV12)
-#endif
 			apq8064_configure_gpios(pm8917_nc, ARRAY_SIZE(pm8917_nc));
-#endif
 	}
 
 	if (machine_is_apq8064_cdp() || machine_is_apq8064_liquid()) {
@@ -446,7 +412,6 @@ static struct pm8xxx_adc_platform_data apq8064_pm8921_adc_pdata = {
 	.adc_mpp_base		= PM8921_MPP_PM_TO_SYS(1),
 };
 
-#if defined (CONFIG_MACH_JF)
 static int pm8xxx_dbg_gpios[] = {
 	2,	/* EXT_BUCK_EN */
 	4,	/* CAM_CORE_EN */
@@ -470,10 +435,7 @@ static int pm8xxx_dbg_mpps[] = {
 	2,	/* MLCD_RST */
 	4,	/* MLCD_nRST_1.8V */
 };
-#else
-static int pm8xxx_dbg_gpios[];
-static int pm8xxx_dbg_mpps[];
-#endif
+
 static struct pm8xxx_mpp_platform_data
 apq8064_pm8921_mpp_pdata __devinitdata = {
 	.mpp_base	= PM8921_MPP_PM_TO_SYS(1),

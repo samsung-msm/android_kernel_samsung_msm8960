@@ -169,13 +169,8 @@ static struct synaptics_rmi_f1a_button_map tm1940_f1a_button_map = {
 #define SYNAPTICS_MAX_X_SIZE	1079
 #define SYNAPTICS_MAX_Y_SIZE	1919
 #define SYNAPTICS_MAX_WIDTH	SYNAPTICS_MAX_Y_SIZE
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-#define NUM_RX	16
-#define NUM_TX	28
-#else
 #define NUM_RX	28
 #define NUM_TX	16
-#endif
 
 static struct synaptics_rmi4_platform_data rmi4_platformdata = {
 	/*.irq_type = IRQF_TRIGGER_FALLING,*/
@@ -280,7 +275,7 @@ void __init S5000_tsp_input_init(int version)
 			__func__, el_type, touch_type,
 			rmi4_platformdata.recovery_mode ? "recovery mode" : "normal mode");
 
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO) || defined(CONFIG_MACH_JF_EUR)
+#if defined(CONFIG_MACH_JF)
 	if(system_rev >= BOARD_REV08)  {
 		rmi4_platformdata.gpio = NEW_GPIO_TOUCH_IRQ;
 		ret = gpio_request(NEW_GPIO_TOUCH_IRQ, "tsp_int");
@@ -305,39 +300,6 @@ void __init S5000_tsp_input_init(int version)
 		i2c_register_board_info(APQ_8064_GSBI3_QUP_I2C_BUS_ID, bus2_i2c_devices,
 			ARRAY_SIZE(bus2_i2c_devices));
 	}
-#elif defined(CONFIG_MACH_JF_DCM)
-        rmi4_platformdata.gpio = NEW_GPIO_TOUCH_IRQ;
-		ret = gpio_request(NEW_GPIO_TOUCH_IRQ, "tsp_int");
-		if (ret != 0) {
-			printk(KERN_ERR"tsp int request failed, ret=%d", ret);
-			return ;
-		}
-		gpio_tlmm_config(GPIO_CFG(NEW_GPIO_TOUCH_IRQ, 0,
-			GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-		i2c_register_board_info(APQ_8064_GSBI3_QUP_I2C_BUS_ID, new_bus2_i2c_devices,
-			ARRAY_SIZE(bus2_i2c_devices));
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-        rmi4_platformdata.gpio = NEW_GPIO_TOUCH_IRQ;
-		ret = gpio_request(NEW_GPIO_TOUCH_IRQ, "tsp_int");
-		if (ret != 0) {
-			printk(KERN_ERR"tsp int request failed, ret=%d", ret);
-			return ;
-		}
-		gpio_tlmm_config(GPIO_CFG(NEW_GPIO_TOUCH_IRQ, 0,
-			GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-		i2c_register_board_info(APQ_8064_GSBI3_QUP_I2C_BUS_ID, new_bus2_i2c_devices,
-			ARRAY_SIZE(bus2_i2c_devices));
-#elif defined(CONFIG_MACH_JFVE_EUR)
-		rmi4_platformdata.gpio = GPIO_TOUCH_IRQ;
-		ret = gpio_request(GPIO_TOUCH_IRQ, "tsp_int");
-		if (ret != 0) {
-			printk(KERN_ERR"tsp int request failed, ret=%d", ret);
-			return ;
-		}
-		gpio_tlmm_config(GPIO_CFG(GPIO_TOUCH_IRQ, 0,
-			GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-		i2c_register_board_info(APQ_8064_GSBI3_QUP_I2C_BUS_ID, new_bus2_i2c_devices,
-			ARRAY_SIZE(bus2_i2c_devices));
 #else
 	if(system_rev >= BOARD_REV09) {
 		rmi4_platformdata.gpio = NEW_GPIO_TOUCH_IRQ;

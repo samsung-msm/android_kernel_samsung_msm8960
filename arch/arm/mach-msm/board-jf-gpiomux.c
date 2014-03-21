@@ -1881,9 +1881,7 @@ void __init apq8064_init_gpiomux(void)
 	msm_gpiomux_install(sensorhub_configs,
 			ARRAY_SIZE(sensorhub_configs));
 
-#ifndef CONFIG_MACH_JFTDD_CHN_CU
 	if (system_rev > BOARD_REV11)
-#endif
 		msm_gpiomux_install(nfc_firmware_configs,
 			ARRAY_SIZE(nfc_firmware_configs));
 

@@ -21,11 +21,6 @@
 #include <mach/gpiomux.h>
 #include <mach/socinfo.h>
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-#include <mach/pmic.h>
-#include "devices-msm8x60.h"
-#endif
-
 #include "devices.h"
 #include "board-8064.h"
 #include <linux/spi/spi.h>
@@ -277,9 +272,7 @@ static struct msm_gpiomux_config apq8064_cam_2d_configs[] = {
 
 
 static struct regulator *lvs5, *l21, *l28, *l35 ;
-#if !defined(CONFIG_MACH_JACTIVE_ATT) && !defined(CONFIG_MACH_JACTIVE_EUR)
 static struct regulator *smps_s8;
-#endif
 struct pm_gpio gpio_off_param = {
 	.direction = PM_GPIO_DIR_OUT,
 	.output_buffer = PM_GPIO_OUT_BUF_CMOS,
@@ -358,7 +351,6 @@ static int get_system_rev(void)
 {
 	return system_rev;
 }
-#if !defined(CONFIG_MACH_JACTIVE_ATT) && !defined(CONFIG_MACH_JACTIVE_EUR)
 
 static void cam_ldo_power_on(void)
 {
@@ -427,11 +419,7 @@ static void cam_ldo_power_on(void)
 			printk(KERN_DEBUG "error enabling regulator 8921_lvs5\n");
 	} else {
 		l35 = regulator_get(NULL, "8917_l35");
-#ifdef CONFIG_MACH_JF_DCM
-		regulator_set_voltage(l35, 1850000, 1850000);
-#else
 		regulator_set_voltage(l35, 1800000, 1800000);
-#endif
 		ret = regulator_enable(l35);
 		if (ret)
 			printk(KERN_DEBUG "error enabling regulator 8917_l35\n");
@@ -496,80 +484,6 @@ static void cam_ldo_power_off(void)
 		}
 	}
 }
-
-#else
-static void cam_ldo_power_on_sub(void)
-{
-	int ret = 0;
-	printk(KERN_DEBUG "[FORTIUS] %s: Sub On\n", __func__);
-	printk(KERN_DEBUG "[FORTIUS] %s: system_rev=%d\n", __func__, system_rev);
-
-	pmic_gpio_ctrl(GPIO_CAM_A_EN2, 1);
-	usleep(1*1000);
-
-	l28 = regulator_get(NULL, "8921_l28");
-	regulator_set_voltage(l28, 1100000, 1100000);
-	ret = regulator_enable(l28);
-	if (ret)
-		printk(KERN_DEBUG "error enabling regulator 8921_l28 \n");
-
-	usleep(1*1000);
-}
-
-static void cam_ldo_power_on(void)
-{
-	int ret = 0;
-	printk(KERN_DEBUG "[FORTIUS] %s: On\n", __func__);
-	pmic_gpio_ctrl(GPIO_CAM_AF_EN, 1);
-	usleep(2*1000);
-
-	if (system_rev == 0) {
-		lvs5 = regulator_get(NULL, "8921_lvs5");
-		ret = regulator_enable(lvs5);
-		if (ret)
-			printk(KERN_DEBUG "error enabling regulator 8921_lvs5\n");
-	} else {
-		l35 = regulator_get(NULL, "8917_l35");
-		regulator_set_voltage(l35, 1800000, 1800000);
-		ret = regulator_enable(l35);
-		if (ret)
-			printk(KERN_DEBUG "error enabling regulator 8917_l35\n");
-	}
-}
-
-static void cam_ldo_power_off_sub(void)
-{
-	int ret = 0;
-	printk(KERN_DEBUG "[Fortius] %s: Sub Off\n", __func__);
-
-	pmic_gpio_ctrl(GPIO_CAM_AF_EN, 0);
-	udelay(1*1000);
-
-	if (l35) {
-		ret = regulator_disable(l35);
-		if (ret)
-			printk(KERN_DEBUG "error disabling regulator 8917_l35\n");
-	}
-}
-
-static void cam_ldo_power_off(void)
-{
-	int ret = 0;
-	printk(KERN_DEBUG "[Fortius] %s: Off\n", __func__);
-
-	if(l28){ 
-		ret = regulator_disable(l28);
-		if (ret)
-			printk(KERN_DEBUG "error disabling regulator 8921_l28 \n");;
-	}
-	udelay(1000);
-
-	gpio_set_value_cansleep(GPIO_CAM_A_EN2, 0);
-	ret = gpio_get_value(GPIO_CAM_A_EN);
-	if (ret)
-		printk("check GPIO_CAM_A_EN : %d\n", ret);
-}
-#endif
 
 static void cam_ldo_af_power_off(void)
 {
@@ -725,92 +639,6 @@ static struct msm_bus_vectors cam_low_power_vectors[] = {
 	},
 };
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-static struct msm_bus_vectors cam_preview_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_VFE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 27648000,
-		.ib  = 2656000000UL,	/*110592000,*/
-	},
-	{
-		.src = MSM_BUS_MASTER_VPE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_JPEG_ENC,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 0,
-	},
-};
-
-static struct msm_bus_vectors cam_video_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_VFE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 600000000,
-		.ib  = 2656000000UL,	/*561807360,*/
-	},
-	{
-		.src = MSM_BUS_MASTER_VPE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 206807040,
-		.ib  = 488816640,
-	},
-	{
-		.src = MSM_BUS_MASTER_JPEG_ENC,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 0,
-	},
-};
-
-static struct msm_bus_vectors cam_snapshot_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_VFE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 600000000,	/*274423680,*/
-		.ib  = 2656000000UL,
-	},
-	{
-		.src = MSM_BUS_MASTER_VPE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_JPEG_ENC,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 540000000,
-		.ib  = 1350000000,
-	},
-};
-
-static struct msm_bus_vectors cam_zsl_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_VFE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		/*.ab  = 302071680,*/
-		.ab  = 800000000,
-		.ib  = 4264000000UL, /*1208286720,*/
-	},
-	{
-		.src = MSM_BUS_MASTER_VPE,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_JPEG_ENC,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = 0,
-		.ib  = 1350000000,
-	},
-};
-#else
 static struct msm_bus_vectors cam_preview_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_VFE,
@@ -893,7 +721,6 @@ static struct msm_bus_vectors cam_zsl_vectors[] = {
 		.ib  = 1350000000,
 	},
 };
-#endif
 
 static struct msm_bus_vectors cam_video_ls_vectors[] = {
 	{
@@ -1130,18 +957,6 @@ static struct msm_actuator_info msm_act_main_cam_1_info = {
 	.vcm_enable     = 0,
 };
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-static struct i2c_board_info msm_act_main_cam2_i2c_info = {
-	I2C_BOARD_INFO("msm_actuator", 0x50),
-};
-static struct msm_actuator_info msm_act_main_cam_2_info = {
-	.board_info     = &msm_act_main_cam2_i2c_info,
-	.cam_name       = MSM_ACTUATOR_MAIN_CAM_2,
-	.bus_id			= MSM_CAMERA_SW_I2C_BUS_ID, // 27
-	.vcm_pwd        = 0,
-	.vcm_enable     = 0,
-};
-#endif
 static struct msm_camera_i2c_conf apq8064_front_cam_i2c_conf = {
 	.use_i2c_mux = 0,
 };
@@ -1287,40 +1102,15 @@ static struct camera_vreg_t msm_8064_s5k3h5xa_vreg[] = {
 	{"cam_vana", REG_LDO, 2800000, 2850000, 85600},
 	{"cam_vaf", REG_LDO, 2800000, 2800000, 300000},
 };
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-static struct msm_eeprom_info imx175_eeprom_info = {
-        .type = MSM_EEPROM_SPI,
-};
-#endif
+
 static struct msm_camera_csi_lane_params s5k3h5xa_csi_lane_params = {
 	.csi_lane_assign = 0xE4,
 	.csi_lane_mask = 0xF,
 };
 
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-static int pmic_set_func(uint8_t pmic_gpio, uint8_t onoff)
-{
-	pmic_gpio_ctrl(PM8921_GPIO_PM_TO_SYS(pmic_gpio), onoff);
-		
-	return 0;
-}
-
-static struct msm_camera_sensor_flash_src msm_flash_src_s5k3h5xa = {
-	.flash_sr_type = MSM_CAMERA_FLASH_SRC_PMIC_GPIO,
-	._fsrc.pmic_gpio_src.led_src_1 = 33, /* emitting until coming LOW signal */
-	._fsrc.pmic_gpio_src.led_src_2 = 24, /* flash for a short time */
-	._fsrc.pmic_gpio_src.pmic_set_func = pmic_set_func
-};
-static struct msm_camera_sensor_flash_data flash_s5k3h5xa = {
-	.flash_type	= MSM_CAMERA_FLASH_LED,
-	.flash_src	= &msm_flash_src_s5k3h5xa
-};
-
-#else
 static struct msm_camera_sensor_flash_data flash_s5k3h5xa = {
 	.flash_type = MSM_CAMERA_FLASH_NONE
 };
-#endif
 
 static struct msm_camera_sensor_platform_info sensor_board_info_s5k3h5xa = {
 	.mount_angle = 90,
@@ -1331,10 +1121,6 @@ static struct msm_camera_sensor_platform_info sensor_board_info_s5k3h5xa = {
 	.csi_lane_params = &s5k3h5xa_csi_lane_params,
 	.sensor_power_on = cam_ldo_power_on,
 	.sensor_power_off = cam_ldo_power_off,
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-	.sensor_power_on_sub = cam_ldo_power_on_sub,	
-	.sensor_power_off_sub = cam_ldo_power_off_sub,	
-#endif	
 	.sensor_pmic_gpio_ctrl = pmic_gpio_ctrl,
 	.reset = GPIO_13M_CAM_RESET,
 };
@@ -1346,10 +1132,6 @@ static struct msm_camera_sensor_info msm_camera_sensor_s5k3h5xa_data = {
 	.csi_if = 1,
 	.camera_type = BACK_CAMERA_2D,
 	.sensor_type = BAYER_SENSOR,
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-	.actuator_info = &msm_act_main_cam_2_info,
-	.eeprom_info = &imx175_eeprom_info,
-#endif	
 };
 
 static struct msm_camera_sensor_flash_data flash_mt9m114 = {
@@ -1535,11 +1317,7 @@ void __init apq8064_init_cam(void)
 	pm8xxx_gpio_config(GPIO_13M_CAM_RESET, &cam_init_out_cfg);
 	pm8xxx_gpio_config(GPIO_CAM_AF_EN, &cam_init_out_cfg);
 	pm8xxx_gpio_config(GPIO_VT_CAM_STBY, &cam_init_out_cfg);
-#if defined(CONFIG_MACH_JACTIVE_ATT) || defined(CONFIG_MACH_JACTIVE_EUR)
-#else
 	pm8xxx_gpio_config(GPIO_CAM_ISP_INT, &cam_init_in_cfg);
-#endif
-
 	pm8xxx_gpio_config(GPIO_CAM_A_EN2, &cam_init_out_cfg);
 
 	/* temp: need to set low because bootloader make high signal. */

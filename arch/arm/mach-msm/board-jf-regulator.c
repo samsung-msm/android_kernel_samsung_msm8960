@@ -779,13 +779,8 @@ msm8064_pm8917_regulator_pdata[] __devinitdata = {
 		0, 7),
 	PM8XXX_LDO(L34,      "8917_l34", 0, 1, 2200000, 2200000, 200, NULL,
 		0, 8),
-#ifdef CONFIG_MACH_JF_DCM
-	PM8XXX_LDO(L35,      "8917_l35", 0, 1, 1850000, 1850000, 200, NULL,
-		0, 9),
-#else
 	PM8XXX_LDO(L35,      "8917_l35", 0, 1, 1800000, 1800000, 200, NULL,
 		0, 9),
-#endif
 	PM8XXX_LDO(L36,      "8917_l36", 0, 1, 1800000, 1800000, 200, NULL,
 		0, 10),
 
@@ -817,13 +812,8 @@ msm8064_pm8917_regulator_pdata[] __devinitdata = {
 		0, 5),
 	PM8XXX_LDO(L34,      "8917_l34", 0, 1, 2200000, 2200000, 200, NULL,
 		0, 6),
-#ifdef CONFIG_MACH_JF_DCM
-	PM8XXX_LDO(L35,      "8917_l35", 0, 1, 1850000, 1850000, 200, NULL,
-		0, 7),
-#else
 	PM8XXX_LDO(L35,      "8917_l35", 0, 1, 1800000, 1800000, 200, NULL,
 		0, 7),
-#endif
 	PM8XXX_LDO(L36,      "8917_l36", 0, 1, 1800000, 1800000, 200, NULL,
 		0, 8),
 

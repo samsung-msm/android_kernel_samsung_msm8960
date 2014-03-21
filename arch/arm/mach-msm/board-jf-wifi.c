@@ -149,21 +149,7 @@ static unsigned config_gpio_wl_reg_on[] = {
 static unsigned get_gpio_wl_host_wake(void)
 {
 	unsigned gpio_wl_host_wake;
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO)
-	if (system_rev < BOARD_REV08) {
-		gpio_wl_host_wake = GPIO_WL_HOST_WAKE;
-	} else {
-		gpio_wl_host_wake = GPIO_WL_HOST_WAKE_REV08;
-	}
-#elif defined(CONFIG_MACH_JF_EUR)
 	gpio_wl_host_wake = GPIO_WL_HOST_WAKE_REV08;
-#else /*VZW/SPR/USCC */
-	if (system_rev < BOARD_REV09) {
-		gpio_wl_host_wake = GPIO_WL_HOST_WAKE;
-	} else {
-		gpio_wl_host_wake = GPIO_WL_HOST_WAKE_REV08;
-	}
-#endif
 
 	return gpio_wl_host_wake;
 }

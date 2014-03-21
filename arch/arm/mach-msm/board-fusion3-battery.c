@@ -137,11 +137,7 @@ static bool sec_fg_gpio_init(void)
 				GPIO_FUEL_INT_04A);
 		pm8xxx_gpio_config(PM8921_GPIO_PM_TO_SYS(GPIO_FUEL_INT_04A),
 						&param);
-#if defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO)
-	} else if (system_rev >= 8) {
-#else
 	} else if (system_rev >= 9) {
-#endif
 		/* FUEL_ALERT Registration */
 		struct pm8xxx_mpp_config_data fuel_alert_mppcfg = {
 			.type = PM8XXX_MPP_TYPE_D_INPUT,
@@ -432,66 +428,6 @@ static bool sec_bat_get_temperature_callback(
 		union power_supply_propval *val) {return true; }
 static bool sec_fg_fuelalert_process(bool is_fuel_alerted) {return true; }
 
-#if defined(CONFIG_MACH_JF_DCM)
-static const sec_bat_adc_table_data_t temp_table[] = {
-	{25893,	900},
-	{26142,	850},
-	{26427,	800},
-	{26792,	750},
-	{27120,	700},
-	{27585,	650},
-	{28110,	600},
-	{28655,	550},
-	{29315,	500},
-	{30075,	450},
-	{30780,	400},
-	{31780,	350},
-	{32713,	300},
-	{33870,	250},
-	{35000,	200},
-	{36075,	150},
-	{37125,	100},
-	{38110,	50},
-	{38995,	0},
-	{39710,	-50},
-	{40480,	-100},
-	{41040,	-150},
-	{41510,	-200},
-	{41934,	-250},
-};
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-static const sec_bat_adc_table_data_t temp_table[] = {
-	{25893,	900},
-	{26142,	850},
-	{26427,	800},
-	{26792,	750},
-	{27039,	700},
-	{27264,	670},
-	{27435,	650},
-	{27645,	630},
-	{27982,	600},
-	{28561,	550},
-	{29202,	500},
-	{29946,	450},
-	{30318,	430},
-	{30845,	400},
-	{31630,	350},
-	{32871,	300},
-	{33975,	250},
-	{35091,	200},
-	{36174,	150},
-	{37243,	100},
-	{38198,	50},
-	{39157,	0},
-	{39676,	-30},
-	{39974,	-50},
-	{40690,	-100},
-	{41183,	-150},
-	{41685,	-200},
-	{42089,	-250},
-	{42370,	-300},
-};
-#else
 static const sec_bat_adc_table_data_t temp_table[] = {
 	{25893,	900},
 	{26142,	850},
@@ -518,7 +454,6 @@ static const sec_bat_adc_table_data_t temp_table[] = {
 	{41573,	-200},
 	{41943, -250},
 };
-#endif
 
 /* ADC region should be exclusive */
 static sec_bat_adc_region_t cable_adc_value_table[] = {
@@ -540,42 +475,9 @@ static int polling_time_table[] = {
 	30,	/* CHARGING */
 	30,	/* DISCHARGING */
 	30,	/* NOT_CHARGING */
-#if defined(CONFIG_MACH_JACTIVE_EUR)
-	5 * 60,	/* SLEEP */
-#else
 	60 * 60,	/* SLEEP */
-#endif
 };
 
-#if defined(CONFIG_BOARD_JF_REFRESH)
-/* for MAX17048 */
-static struct battery_data_t fusion3_battery_data[] = {
-	/* SDI battery data (High voltage 4.35V) */
-	{
-		.RCOMP0 = 0x65,
-		.RCOMP_charging = 0x70,
-		.temp_cohot = -700,
-		.temp_cocold = -4875,
-		.is_using_model_data = true,
-		.type_str = "SDI",
-	}
-};
-#elif defined(CONFIG_MACH_JF_ATT) || defined(CONFIG_MACH_JF_TMO) || \
-	defined(CONFIG_MACH_JF_SPR) || defined(CONFIG_MACH_JF_USC) || \
-	defined(CONFIG_MACH_JF_VZW)
-/* for MAX17048 */
-static struct battery_data_t fusion3_battery_data[] = {
-	/* SDI battery data (High voltage 4.35V) */
-	{
-		.RCOMP0 = 0x73,
-		.RCOMP_charging = 0x70,
-		.temp_cohot = -700,
-		.temp_cocold = -4875,
-		.is_using_model_data = true,
-		.type_str = "SDI",
-	}
-};
-#else
 /* for MAX17048 */
 static struct battery_data_t fusion3_battery_data[] = {
 	/* SDI battery data (High voltage 4.35V) */
@@ -588,7 +490,6 @@ static struct battery_data_t fusion3_battery_data[] = {
 		.type_str = "SDI",
 	}
 };
-#endif
 
 sec_battery_platform_data_t sec_battery_pdata = {
 	/* NO NEED TO BE CHANGED */
@@ -657,14 +558,8 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.bat_polarity_ta_nconnected = 0,
 	.bat_irq = IF_PMIC_IRQ_BASE + MAX77693_CHG_IRQ_BATP_I,
 	.bat_irq_attr = IRQF_TRIGGER_FALLING,
-#if defined(CONFIG_MACH_JF_VZW)
-	.cable_check_type =
-		SEC_BATTERY_CABLE_CHECK_PSY |
-		SEC_BATTERY_CABLE_CHECK_NOINCOMPATIBLECHARGE,
-#else
 	.cable_check_type =
 		SEC_BATTERY_CABLE_CHECK_PSY,
-#endif
 	.cable_source_type =
 		SEC_BATTERY_CABLE_SOURCE_EXTERNAL |
 		SEC_BATTERY_CABLE_SOURCE_EXTENDED,
@@ -698,52 +593,6 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.temp_check_type = SEC_BATTERY_TEMP_CHECK_TEMP,
 	.temp_check_count = 1,
 
-#if defined(CONFIG_MACH_JF_USC)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 450,
-	.temp_low_threshold_event = -50,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 420,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 420,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JACTIVE_ATT)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 470,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 470,
-	.temp_high_recovery_lpm = 430,
-	.temp_low_threshold_lpm = -30,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JF_CRI)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 450,
-	.temp_low_threshold_event = -50,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 500,
-	.temp_high_recovery_normal = 420,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 460,
-	.temp_high_recovery_lpm = 420,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JF_EUR)
 	.temp_high_threshold_event = 600,
 	.temp_high_recovery_event = 400,
 	.temp_low_threshold_event = -50,
@@ -758,172 +607,6 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.temp_high_recovery_lpm = 400,
 	.temp_low_threshold_lpm = -50,
 	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_BOARD_JF_REFRESH)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 550,
-	.temp_high_recovery_normal = 430,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 495,
-	.temp_high_recovery_lpm = 448,
-	.temp_low_threshold_lpm = -10,
-	.temp_low_recovery_lpm = 20,
-#elif defined(CONFIG_MACH_JF_SPR)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 500,
-	.temp_high_recovery_normal = 430,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 495,
-	.temp_high_recovery_lpm = 448,
-	.temp_low_threshold_lpm = -10,
-	.temp_low_recovery_lpm = 20,
-#elif defined(CONFIG_MACH_JF_VZW)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 520,
-	.temp_high_recovery_normal = 460,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 40,
-
-	.temp_high_threshold_lpm = 480,
-	.temp_high_recovery_lpm = 450,
-	.temp_low_threshold_lpm = -30,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JF_TMO)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 480,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 480,
-	.temp_high_recovery_lpm = 430,
-	.temp_low_threshold_lpm = -30,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JF_ATT)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 480,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 480,
-	.temp_high_recovery_lpm = 430,
-	.temp_low_threshold_lpm = -30,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JF_SKT)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 420,
-	.temp_low_threshold_event = -34,
-	.temp_low_recovery_event = -1,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 420,
-	.temp_low_threshold_normal = -34,
-	.temp_low_recovery_normal = -1,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 420,
-	.temp_low_threshold_lpm = -34,
-	.temp_low_recovery_lpm = -1,
-#elif defined(CONFIG_MACH_JF_KTT)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 420,
-	.temp_low_threshold_event = -34,
-	.temp_low_recovery_event = -1,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 420,
-	.temp_low_threshold_normal = -34,
-	.temp_low_recovery_normal = -1,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 420,
-	.temp_low_threshold_lpm = -34,
-	.temp_low_recovery_lpm = -1,
-#elif defined(CONFIG_MACH_JF_LGT)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 420,
-	.temp_low_threshold_event = -34,
-	.temp_low_recovery_event = -1,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 420,
-	.temp_low_threshold_normal = -34,
-	.temp_low_recovery_normal = -1,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 420,
-	.temp_low_threshold_lpm = -34,
-	.temp_low_recovery_lpm = -1,
-#elif defined(CONFIG_MACH_JF_DCM)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -50,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 400,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = 0,
-#elif defined(CONFIG_MACH_JFVE_EUR)
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -50,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 600,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 600,
-	.temp_high_recovery_lpm = 400,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = 0,
-#else
-	.temp_high_threshold_event = 600,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-
-	.temp_high_threshold_normal = 450,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -30,
-	.temp_low_recovery_normal = 0,
-
-	.temp_high_threshold_lpm = 450,
-	.temp_high_recovery_lpm = 400,
-	.temp_low_threshold_lpm = -30,
-	.temp_low_recovery_lpm = 0,
-#endif
 
 	.full_check_type = SEC_BATTERY_FULLCHARGED_CHGPSY,
 	.full_check_type_2nd = SEC_BATTERY_FULLCHARGED_TIME,
@@ -1026,12 +709,10 @@ __setup("androidboot.boot_recovery=", sec_bat_current_boot_mode);
 void __init msm8960_init_battery(void)
 {
 	/* FUEL_SDA/SCL setting */
-#if !defined(CONFIG_MACH_JFVE_EUR)
 	if ((system_rev > 0) && (system_rev < 6)) {
 		gpio_i2c_data_fgchg.sda_pin = GPIO_FUELGAUGE_I2C_SDA_OLD;
 		gpio_i2c_data_fgchg.scl_pin = GPIO_FUELGAUGE_I2C_SCL_OLD;
 	}
-#endif
 	platform_add_devices(
 		msm8960_battery_devices,
 		ARRAY_SIZE(msm8960_battery_devices));
