@@ -281,7 +281,9 @@ static int msm_voice_volume_get(struct snd_kcontrol *kcontrol,
 	ucontrol->value.integer.value[0] = 0;
 	return 0;
 }
-
+#ifdef CONFIG_SND_SOC_ES325
+int es325_set_VEQ_max_gain(int volume);
+#endif
 static int msm_voice_volume_put(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -289,6 +291,9 @@ static int msm_voice_volume_put(struct snd_kcontrol *kcontrol,
 	pr_debug("%s: volume: %d\n", __func__, volume);
 	voc_set_rx_vol_index(voc_get_session_id(VOICE_SESSION_NAME),
 						RX_PATH, volume);
+#ifdef CONFIG_SND_SOC_ES325
+	es325_set_VEQ_max_gain(volume);
+#endif
 	return 0;
 }
 

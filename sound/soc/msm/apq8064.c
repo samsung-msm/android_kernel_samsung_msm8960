@@ -1000,8 +1000,11 @@ static int msm_hw_params(struct snd_pcm_substream *substream,
 			goto end;
 		}
 	} else {
-
+#ifdef CONFIG_SND_SOC_ES325
+		if (codec_dai->id  == 2 || codec_dai->id == 12)
+#else
 		if (codec_dai->id  == 2)
+#endif
 			num_tx_ch =  msm_slim_0_tx_ch;
 		else if (codec_dai->id == 5) {
 			/* DAI 5 is used for external EC reference from codec.

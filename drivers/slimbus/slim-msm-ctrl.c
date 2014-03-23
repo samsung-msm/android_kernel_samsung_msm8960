@@ -86,7 +86,11 @@
 #define QC_DEVID_SAT1	0x3
 #define QC_DEVID_SAT2	0x4
 #define QC_DEVID_PGD	0x5
+#ifdef CONFIG_SND_SOC_ES325
+#define QC_MSM_DEVS     7
+#else
 #define QC_MSM_DEVS	5
+#endif
 #define INIT_MX_RETRIES 10
 #define DEF_RETRY_MS	10
 
@@ -1208,6 +1212,31 @@ static void msm_slim_rxwq(struct msm_slim_ctrl *dev)
 			u8 e_addr[6];
 			for (i = 0; i < 6; i++)
 				e_addr[i] = buf[7-i];
+#ifdef CONFIG_SND_SOC_ES325
+			if ((e_addr[0] == 0x00) && (e_addr[1] == 0x00) &&
+				(e_addr[2] == 0x02) && (e_addr[3] == 0x00) &&
+				(e_addr[4] == 0xbe) && (e_addr[5] == 0x02)) {
+
+				pr_info("wrapper slim_rxwq es325 eaddr recv and apply temporary workaround\n");
+
+				e_addr[1] = 0x01;
+
+				ret = slim_assign_laddr(&dev->ctrl, e_addr, 6,
+							&laddr, false);
+
+				pr_info("wrapper %s assign laddr %2x ret=%d\n",
+					__func__, e_addr[1], ret);
+
+				e_addr[1] = 0x00;
+
+				ret = slim_assign_laddr(&dev->ctrl, e_addr,
+							6, &laddr, false);
+
+				pr_info("wrapper %s assign laddr %2x ret=%d\n",
+					__func__, e_addr[1], ret);
+
+			} else
+#endif
 
 			ret = slim_assign_laddr(&dev->ctrl, e_addr, 6, &laddr,
 						false);
@@ -1680,6 +1709,18 @@ static int msm_slim_rx_msgq_thread(void *data)
 				u8 laddr;
 				laddr = (u8)((buffer[0] >> 16) & 0xff);
 				sat = addr_to_sat(dev, laddr);
+#ifdef CONFIG_SND_SOC_ES325
+			} else if ((index * 4) >= msg_len) {
+				if (sat) {
+					msm_sat_enqueue(sat, buffer, msg_len);
+					queue_work(sat->wq, &sat->wd);
+					sat = NULL;
+				} else {
+					msm_slim_rx_enqueue(dev, buffer, msg_len);
+					msm_slim_rxwq(dev);
+				}
+				index = 0;
+#endif
 			}
 		}
 		if ((index * 4) >= msg_len) {
