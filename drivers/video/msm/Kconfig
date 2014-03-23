@@ -1070,6 +1070,14 @@ config FB_MSM_EBI2_PANEL_DETECT
 	---help---
 	  Support for EBI2 panel auto detect
 
+config SUPPORT_SECOND_POWER
+	bool "support second power operation"
+	default n
+
+config LCD_VDD3_BY_PMGPIO
+	bool "support externel dcdc for VDD3_IO"
+	default n
+
 if FB_MSM_MDSS
 	source "drivers/video/msm/mdss/Kconfig"
 endif
