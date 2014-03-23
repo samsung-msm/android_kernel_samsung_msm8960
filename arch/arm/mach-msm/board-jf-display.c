@@ -283,7 +283,7 @@ static struct msm_panel_common_pdata mdp_pdata = {
 	.mem_hid = MEMTYPE_EBI1,
 #endif
 	.mdp_iommu_split_domain = 1,
-	.cont_splash_enabled = 0x01,
+	.cont_splash_enabled = 0x00,
 };
 
 static char mipi_dsi_splash_is_enabled(void)
