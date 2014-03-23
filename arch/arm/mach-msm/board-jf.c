@@ -177,12 +177,20 @@ static void sensor_power_on_vdd(int, int);
 #define MSM_ION_MM_SIZE		0x6600000    /* 56MB(0x3800000) -> 98MB -> 102MB */
 #define MSM_ION_SF_SIZE		0
 #define MSM_ION_QSECOM_SIZE	0x1700000    /* 7.5MB(0x780000) -> 23MB */
+#ifdef CONFIG_CMA
 #define MSM_ION_HEAP_NUM	8
+#else
+#define MSM_ION_HEAP_NUM	7
+#endif
 #else
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
 #define MSM_ION_SF_SIZE		MSM_PMEM_SIZE
 #define MSM_ION_QSECOM_SIZE	0x600000 /* (6MB) */
+#ifdef CONFIG_CMA
+#define MSM_ION_HEAP_NUM	9
+#else
 #define MSM_ION_HEAP_NUM	8
+#endif
 #endif
 #define MSM_ION_MM_FW_SIZE	(0x200000 - HOLE_SIZE) /* (2MB - 128KB) */
 #define MSM_ION_MFC_SIZE	(SZ_8K + MSM_ION_MFC_META_SIZE)
@@ -600,7 +608,12 @@ static struct ion_cp_heap_pdata cp_mm_apq8064_ion_pdata = {
 	.reusable = FMEM_ENABLED,
 	.mem_is_fmem = FMEM_ENABLED,
 	.fixed_position = FIXED_MIDDLE,
+	.iommu_map_all = 1,
+#ifdef CONFIG_CMA
+	.is_cma = 1,
+#else
 	.is_cma = 0,
+#endif
 	.allow_nonsecure_alloc = 0,
 };
 
@@ -638,6 +651,7 @@ static struct platform_device ion_mm_heap_device = {
 	}
 };
 
+#ifdef CONFIG_CMA
 static struct platform_device ion_adsp_heap_device = {
 	.name = "ion-adsp-heap-device",
 	.id = -1,
@@ -646,6 +660,8 @@ static struct platform_device ion_adsp_heap_device = {
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	}
 };
+#endif
+
 /**
  * These heaps are listed in the order they will be allocated. Due to
  * video hardware restrictions and content protection the FW heap has to
@@ -720,6 +736,7 @@ struct ion_platform_heap apq8064_heaps[] = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *) &co_apq8064_ion_pdata,
 		},
+#ifdef CONFIG_CMA
 		{
 			.id     = ION_ADSP_HEAP_ID,
 			.type   = ION_HEAP_TYPE_DMA,
@@ -729,6 +746,7 @@ struct ion_platform_heap apq8064_heaps[] = {
 			.extra_data = (void *) &co_apq8064_ion_pdata,
 			.priv = &ion_adsp_heap_device.dev,
 		},
+#endif
 #endif
 };
 

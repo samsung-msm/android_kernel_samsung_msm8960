@@ -177,7 +177,10 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	if (old_nice > -20)
 		set_user_nice(current, -20);
 
-#ifdef CONFIG_MACH_JF
+	if (mipi_dsi_pdata && mipi_dsi_pdata->power_common)
+		mipi_dsi_pdata->power_common();
+
+#ifdef CONFIG_SUPPORT_SECOND_POWER
 	if (mipi_dsi_pdata && mipi_dsi_pdata->panel_power_save)
 		mipi_dsi_pdata->panel_power_save(1);
 #endif
