@@ -1070,6 +1070,10 @@ config FB_MSM_EBI2_PANEL_DETECT
 	---help---
 	  Support for EBI2 panel auto detect
 
+config MDNIE_LITE_TUNING
+	bool "mdnie lite tuning"
+	default n
+
 config SUPPORT_SECOND_POWER
 	bool "support second power operation"
 	default n

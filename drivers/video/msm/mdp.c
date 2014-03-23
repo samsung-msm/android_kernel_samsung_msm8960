@@ -46,6 +46,9 @@
 #ifdef CONFIG_MACH_JF
 #include "mipi_samsung_octa.h"
 #endif
+#if defined(CONFIG_MDNIE_LITE_TUNING)
+#include "mdnie_lite_tuning.h"
+#endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #undef CONFIG_HAS_EARLYSUSPEND
@@ -2487,6 +2490,10 @@ static int mdp_on(struct platform_device *pdev)
 
 	if (ret == 0)
 		ret = panel_next_late_init(pdev);
+
+#if defined(CONFIG_MDNIE_LITE_TUNING)
+	is_negative_on();
+#endif
 
 	pr_debug("%s:-\n", __func__);
 
