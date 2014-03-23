@@ -3248,7 +3248,7 @@ static struct tsens_platform_data apq_tsens_pdata  = {
 };
 
 static struct platform_device msm_tsens_device = {
-	.name   = "apq8064-tmu",
+	.name   = "tsens8960-tm",
 	.id = -1,
 };
 
