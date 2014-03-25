@@ -611,8 +611,6 @@ static int mipi_samsung_disp_on(struct platform_device *pdev)
 	if (get_auto_brightness() >= 6)
 		msd.mpd->first_bl_hbm_psre = 1;
 
-//	sec_debug_mdp_reset_value();
-
 	pr_info("[%s]\n", __func__);
 
 	return 0;
@@ -655,6 +653,7 @@ static int mipi_samsung_disp_off(struct platform_device *pdev)
 	if (mfd->panel_info.mipi.frame_rate != current_fps)
 		mipi_runtime_clk_change(mfd->panel_info.mipi.frame_rate);
 */
+
 	if (msd.mpd->reset_bl_level != NULL)
 		msd.mpd->reset_bl_level();
 
@@ -1392,8 +1391,6 @@ static int __devinit mipi_samsung_disp_probe(struct platform_device *pdev)
 
 		printk(KERN_INFO
 		"[lcd] pdev->id =%d,  pdev-name = %s\n", pdev->id, pdev->name);
-// FUCK SAMSUNG
-//		sec_debug_mdp_init();
 		printk(KERN_INFO "[lcd] mipi_samsung_disp_probe end since pdev-id is 0\n");
 
 		return 0;

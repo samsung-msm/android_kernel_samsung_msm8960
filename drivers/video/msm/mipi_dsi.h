@@ -192,7 +192,11 @@ struct dsi_clk_desc {
 #define DSI_HDR_DATA1(data)	((data) & 0x0ff)
 #define DSI_HDR_WC(wc)		((wc) & 0x0ffff)
 
+#ifdef CONFIG_FB_MSM_MIPI_DSI_SAMSUNG_OCTA
+#define DSI_BUF_SIZE	256
+#else
 #define DSI_BUF_SIZE	64
+#endif
 #define MIPI_DSI_MRPS	0x04	/* Maximum Return Packet Size */
 
 #define MIPI_DSI_LEN 8 /* 4 x 4 - 6 - 2, bytes dcs header+crc-align  */
