@@ -220,8 +220,8 @@ static struct pm8xxx_mpp_platform_data pm8xxx_mpp_pdata __devinitdata = {
 };
 
 static struct pm8xxx_rtc_platform_data pm8xxx_rtc_pdata __devinitdata = {
-	.rtc_write_enable       = false,
-	.rtc_alarm_powerup	= false,
+	.rtc_write_enable       = true,
+	.rtc_alarm_powerup	= true,
 };
 
 static struct pm8xxx_pwrkey_platform_data pm8xxx_pwrkey_pdata = {
@@ -933,6 +933,7 @@ static struct pm8xxx_led_platform_data pm8xxx_leds_pdata = {
 static struct pm8xxx_ccadc_platform_data pm8xxx_ccadc_pdata = {
 	.r_sense_uohm		= 10000,
 	.calib_delay_ms		= 600000,
+	.periodic_wakeup	= true,
 };
 
 /**
