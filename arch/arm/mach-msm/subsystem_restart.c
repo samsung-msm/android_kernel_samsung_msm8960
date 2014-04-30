@@ -480,19 +480,8 @@ static void __subsystem_restart_dev(struct subsys_device *dev)
 	const char *name = dev->desc->name;
 	unsigned long flags;
 
-#if !defined(CONFIG_MACH_JF) && defined(CONFIG_SEC_DEBUG)
-#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
-	if (!sec_debug_is_enabled_for_ssr())
-#else
-	if (!sec_debug_is_enabled())
-#endif
-		restart_level = RESET_SUBSYS_INDEPENDENT;
-	else
-		restart_level = RESET_SOC;
-	if (strcmp(name, "riva") == 0)
-		restart_level = RESET_SUBSYS_INDEPENDENT;
-#endif
 	pr_debug("Restarting %s [level=%d]!\n", desc->name, restart_level);
+
 	/*
 	 * We want to allow drivers to call subsystem_restart{_dev}() as many
 	 * times as they want up until the point where the subsystem is
@@ -684,28 +673,6 @@ static int __init ssr_init_soc_restart_orders(void)
 
 static int __init subsys_restart_init(void)
 {
-#ifdef CONFIG_SEC_DEBUG_MDM_FILE_INFO
-	restart_level = RESET_SUBSYS_INDEPENDENT_SOC;
-#else
-	restart_level = RESET_SOC;
-#endif
-
-#if !defined(CONFIG_MACH_JF) && defined(CONFIG_SEC_DEBUG)
-#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
-	if (!sec_debug_is_enabled_for_ssr())
-#else
-	if (!sec_debug_is_enabled())
-#endif
-	{
-		restart_level = RESET_SUBSYS_INDEPENDENT;
-		enable_ramdumps = 1;
-		pr_info("%s: enable_ramdumps[%d]", __func__, enable_ramdumps);
-	}else {
-		restart_level = RESET_SOC;
-		enable_ramdumps = 0;
-	}
-#endif
-
 	ssr_wq = alloc_workqueue("ssr_wq", WQ_CPU_INTENSIVE, 0);
 	if (!ssr_wq)
 		panic("%s: out of memory\n", __func__);
