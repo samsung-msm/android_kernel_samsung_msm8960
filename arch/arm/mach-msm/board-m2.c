@@ -5182,11 +5182,7 @@ static struct platform_device *common_devices[] __initdata = {
 	&msm8960_cpu_slp_status,
 };
 
-<<<<<<< HEAD:arch/arm/mach-msm/board-m2_vzw.c
-static struct platform_device *cdp_devices[] __initdata = {
-=======
 static struct platform_device *m2_devices[] __initdata = {
->>>>>>> 7ea750a... d2: commonize everything:arch/arm/mach-msm/board-m2.c
 	&msm_8960_q6_lpass,
 	&msm_8960_riva,
 	&msm_pil_tzapps,
@@ -6124,12 +6120,8 @@ static void __init msm8960ab_update_retention_spm(void)
 	}
 }
 
-<<<<<<< HEAD:arch/arm/mach-msm/board-m2_vzw.c
 extern void __init mms_tsp_input_init(void);
-static void __init samsung_m2_vzw_init(void)
-=======
 static void __init samsung_m2_init(void)
->>>>>>> 7ea750a... d2: commonize everything:arch/arm/mach-msm/board-m2.c
 {
 #ifdef CONFIG_SEC_DEBUG
 	sec_debug_init();
@@ -6254,17 +6246,7 @@ static void __init samsung_m2_init(void)
 	msm8960_add_vidc_device();
 
 	msm8960_pm8921_gpio_mpp_init();
-<<<<<<< HEAD:arch/arm/mach-msm/board-m2_vzw.c
-	/* Don't add modem devices on APQ targets */
-	if (socinfo_get_id() != 124) {
-		platform_device_register(&msm_8960_q6_mss_fw);
-		platform_device_register(&msm_8960_q6_mss_sw);
-	}
-	platform_add_devices(cdp_devices, ARRAY_SIZE(cdp_devices));
-	msm8960_init_smsc_hub();
-=======
 	platform_add_devices(m2_devices, ARRAY_SIZE(m2_devices));
->>>>>>> 7ea750a... d2: commonize everything:arch/arm/mach-msm/board-m2.c
 	msm8960_init_hsic();
 	samsung_sys_class_init();
 #ifdef CONFIG_MSM_CAMERA
