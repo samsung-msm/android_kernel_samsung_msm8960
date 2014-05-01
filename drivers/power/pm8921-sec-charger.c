@@ -16,7 +16,6 @@
 #include <linux/moduleparam.h>
 #include <linux/platform_device.h>
 #include <linux/errno.h>
-#include <linux/mfd/pm8xxx/pm8921-sec-charger.h>
 #include <linux/mfd/pm8xxx/pm8921-charger.h>
 #include <linux/mfd/pm8xxx/pm8921-bms.h>
 #include <linux/mfd/pm8xxx/pm8xxx-adc.h>
@@ -376,101 +375,31 @@ static int is_pm8921_sec_charger_using(void)
 	return 1;
 }
 
-#if !defined(CONFIG_MACH_APEXQ)
-static int sec_bat_get_fuelgauge_data(struct pm8921_chg_chip *chip, int type)
-{
-#if defined(CONFIG_BATTERY_MAX17040) || \
-    defined(CONFIG_BATTERY_MAX17042)
-    struct power_supply *psy = power_supply_get_by_name("fuelgauge");
-    union power_supply_propval value;
-
-    if (!psy) {
-        dev_err(chip->dev, "%s: fail to get fuel gauge ps\n", __func__);
-        return -ENODEV;
-    }
-
-    switch (type) {
-    case FG_T_VCELL:
-        value.intval = 0;   /*vcell */
-        psy->get_property(psy, POWER_SUPPLY_PROP_VOLTAGE_NOW, &value);
-        break;
-    case FG_T_SOC:
-        value.intval = 0;   /*normal soc */
-        psy->get_property(psy, POWER_SUPPLY_PROP_CAPACITY, &value);
-        break;
-    case FG_T_PSOC:
-        value.intval = 1;   /*raw soc */
-        psy->get_property(psy, POWER_SUPPLY_PROP_CAPACITY, &value);
-        break;
-    case FG_T_RCOMP:
-        value.intval = 2;   /*rcomp */
-        psy->get_property(psy, POWER_SUPPLY_PROP_CAPACITY, &value);
-        break;
-    case FG_T_FSOC:
-        value.intval = 3;   /*full soc */
-        psy->get_property(psy, POWER_SUPPLY_PROP_CAPACITY, &value);
-        break;
-    default:
-        return -ENODEV;
-    }
-
-    return value.intval;
-
-#else
-    return -ENODEV;
-#endif
-}
-
-static int sec_bat_set_fuelgauge_data(struct pm8921_chg_chip *chip, int type)
-{
-#if defined(CONFIG_BATTERY_MAX17040) || \
-    defined(CONFIG_BATTERY_MAX17042)
-    struct power_supply *psy = power_supply_get_by_name("fuelgauge");
-    union power_supply_propval value;
-
-    if (!psy) {
-        dev_err(chip->dev, "%s: fail to get fuel gauge ps\n", __func__);
-        return -ENODEV;
-    }
-    switch (type) {
-    case FG_RESET:
-        psy->set_property(psy,
-            POWER_SUPPLY_PROP_FUELGAUGE_STATE, &value);
-        break;
-    default:
-        return -ENODEV;
-    }
-    return value.intval;
-#else
-    return -ENODEV;
-#endif
-}
-#endif
-
-#define LPM_ENABLE_BIT  BIT(2)
+#define LPM_ENABLE_BIT	BIT(2)
 static int pm8921_chg_set_lpm(struct pm8921_chg_chip *chip, int enable)
 {
-    int rc;
-    u8 reg;
+	int rc;
+	u8 reg;
 
-    rc = pm8xxx_readb(chip->dev->parent, CHG_CNTRL, &reg);
-    if (rc) {
-        pr_err("pm8xxx_readb failed: addr=%03X, rc=%d\n",
-                CHG_CNTRL, rc);
-        return rc;
-    }
-    reg &= ~LPM_ENABLE_BIT;
-    reg |= (enable ? LPM_ENABLE_BIT : 0);
+	rc = pm8xxx_readb(chip->dev->parent, CHG_CNTRL, &reg);
+	if (rc) {
+		pr_err("pm8xxx_readb failed: addr=%03X, rc=%d\n",
+				CHG_CNTRL, rc);
+		return rc;
+	}
+	reg &= ~LPM_ENABLE_BIT;
+	reg |= (enable ? LPM_ENABLE_BIT : 0);
 
-    rc = pm8xxx_writeb(chip->dev->parent, CHG_CNTRL, reg);
-    if (rc) {
-        pr_err("pm_chg_write failed: addr=%03X, rc=%d\n",
-                CHG_CNTRL, rc);
-        return rc;
-    }
+	rc = pm8xxx_writeb(chip->dev->parent, CHG_CNTRL, reg);
+	if (rc) {
+		pr_err("pm_chg_write failed: addr=%03X, rc=%d\n",
+				CHG_CNTRL, rc);
+		return rc;
+	}
 
-    return rc;
+	return rc;
 }
+
 static int pm_chg_write(struct pm8921_chg_chip *chip, u16 addr, u8 reg)
 {
 	int rc;
@@ -1753,8 +1682,7 @@ static int get_prop_battery_uvolts(struct pm8921_chg_chip *chip)
 	return (int)result.physical;
 }
 
-#if !defined(CONFIG_BATTERY_MAX17040) && !defined(CONFIG_MACH_APEXQ)
-static unsigned int voltage_based_capacity(struct pm8921_chg_chip *chip)
+static int voltage_based_capacity(struct pm8921_chg_chip *chip)
 {
 	int current_voltage_uv = get_prop_battery_uvolts(chip);
 	int current_voltage_mv = current_voltage_uv / 1000;
@@ -1774,7 +1702,6 @@ static unsigned int voltage_based_capacity(struct pm8921_chg_chip *chip)
 		return (current_voltage_mv - low_voltage) * 100
 		    / (high_voltage - low_voltage);
 }
-#endif
 
 static int get_prop_batt_present(struct pm8921_chg_chip *chip)
 {
@@ -1815,14 +1742,15 @@ static int get_prop_batt_capacity(struct pm8921_chg_chip *chip)
 
 	if (chip->battery_less_hardware)
 		return 100;
-#if defined(CONFIG_BATTERY_MAX17040) || \
-    defined(CONFIG_BATTERY_MAX17042)
-    percent_soc = sec_bat_get_fuelgauge_data(chip, FG_T_SOC);
-#elif defined(CONFIG_PM8921_BMS)
+
+	if (!get_prop_batt_present(chip))
+		percent_soc = voltage_based_capacity(chip);
+	else
 		percent_soc = pm8921_bms_get_percent_charge();
+
 	if (percent_soc == -ENXIO)
 		percent_soc = voltage_based_capacity(chip);
-#endif
+
 	if (percent_soc < 0) {
 		pr_err("Unable to read battery voltage\n");
 		goto fail_voltage;
