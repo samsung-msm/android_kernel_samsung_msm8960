@@ -169,8 +169,9 @@ static ssize_t debug_level_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	char buffer[7];
+#if defined(CONFIG_SEC_DEBUG)
 	convert_debug_level_int(kernel_sec_get_debug_level(), buffer);
-
+#endif
 	return snprintf(buf, sizeof(buffer)+1, "%s\n", buffer);
 
 }
@@ -182,9 +183,9 @@ static ssize_t debug_level_store(struct device *dev,
 
 	if (sec_debug_level == 0)
 		return -EINVAL;
-
-	kernel_sec_set_debug_level(sec_debug_level);
-
+#if defined(CONFIG_SEC_DEBUG)
+    kernel_sec_set_debug_level(sec_debug_level);
+#endif
 	return size;
 
 }
