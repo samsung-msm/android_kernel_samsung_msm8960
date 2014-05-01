@@ -64,7 +64,7 @@
 #include "msm_sdcc.h"
 #include "msm_sdcc_dml.h"
 
-#if defined(CONFIG_MACH_M2_SPR) || defined(CONFIG_MACH_M2_VZW) || defined(CONFIG_MACH_M2_ATT)
+#if defined(CONFIG_MACH_M2)
 #include <mach/msm8960-gpio.h>
 #else
 #include <mach/apq8064-gpio.h>
