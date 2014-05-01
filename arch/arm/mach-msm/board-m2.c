@@ -327,7 +327,7 @@ struct sx150x_platform_data msm8960_sx150x_data[] = {
 
 #define MSM_PMEM_ADSP_SIZE         0x9600000 /* 150 Mbytes */
 #define MSM_PMEM_ADSP_SIZE_FOR_2GB         0xA500000 /* 165 Mbytes */
-#define MSM_PMEM_AUDIO_SIZE        0x160000 /* 1.375 Mbytes */
+#define MSM_PMEM_AUDIO_SIZE        0x4CF000
 #define MSM_PMEM_SIZE 0x2800000 /* 40 Mbytes */
 #define MSM_LIQUID_PMEM_SIZE 0x4000000 /* 64 Mbytes */
 #define MSM_HDMI_PRIM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
@@ -336,7 +336,7 @@ struct sx150x_platform_data msm8960_sx150x_data[] = {
 #define HOLE_SIZE	0x100000 /* 1 MB */
 #define MSM_CONTIG_MEM_SIZE  0x280000 /* 2.5MB */
 #ifdef CONFIG_MSM_IOMMU
-#define MSM_ION_MM_SIZE            0x3800000 /* Need to be multiple of 64K */
+#define MSM_ION_MM_SIZE            0x6000000
 #define MSM_ION_SF_SIZE            0x0
 #define MSM_ION_SF_SIZE_FOR_2GB		0x0
 #define MSM_ION_QSECOM_SIZE        0x780000 /* (7.5MB) */
@@ -2154,63 +2154,55 @@ static struct platform_device opt_gp2a = {
 #endif
 #endif
 #ifdef CONFIG_MPU_SENSORS_MPU6050B1_411
-	struct mpu_platform_data mpu6050_data = {
-	.int_config = 0x10,
-	.orientation = {0, -1, 0,
-			1, 0, 0,
-			0, 0, 1},
-	.poweron = mpu_power_on,
-	};
-	/* compass */
-	static struct ext_slave_platform_data inv_mpu_ak8963_data = {
-	.bus		= EXT_SLAVE_BUS_PRIMARY,
-	.orientation = {-1, 0, 0,
-			0, 1, 0,
-			0, 0, -1},
-	};
+struct mpu_platform_data mpu6050_data;
+struct ext_slave_platform_data inv_mpu_ak8963_data;
 
-	struct mpu_platform_data mpu6050_data_04 = {
+/* orientation */
+struct mpu_platform_data mpu6050_data_spr = {
 	.int_config = 0x10,
-	.orientation = {1, 0, 0,
-			0, -1, 0,
-			0, 0, -1},
+	.orientation = { 0,  1,  0,
+			 1,  0,  0,
+			 0,  0, -1},
 	.poweron = mpu_power_on,
-	};
-	/* compass */
-	static struct ext_slave_platform_data inv_mpu_ak8963_data_04 = {
-	.bus		= EXT_SLAVE_BUS_PRIMARY,
-	.orientation = {1, 0, 0,
-			0, 1, 0,
-			0, 0, 1},
-	};
-	struct mpu_platform_data mpu6050_data_01 = {
+};
+
+struct mpu_platform_data mpu6050_data_vzw = {
 	.int_config = 0x10,
-	.orientation = {-1, 0, 0,
-			0, 1, 0,
-			0, 0, -1},
+	.orientation = { 0, -1,  0,
+			 1,  0,  0,
+			 0,  0,  1},
 	.poweron = mpu_power_on,
-	};
-	/* compass */
-	static struct ext_slave_platform_data inv_mpu_ak8963_data_01 = {
-	.bus		= EXT_SLAVE_BUS_PRIMARY,
-	.orientation = {1, 0, 0,
-			0, 1, 0,
-			0, 0, 1},
-	};
-	struct mpu_platform_data mpu6050_data_00 = {
+};
+
+struct mpu_platform_data mpu6050_data_att = {
 	.int_config = 0x10,
-	.orientation = {1, 0, 0,
-			0, 1, 0,
-			0, 0, 1},
+	.orientation = { 0, -1,  0,
+			 1,  0,  0,
+			 0,  0,  1},
 	.poweron = mpu_power_on,
-	};
-	/* compass */
-	static struct ext_slave_platform_data inv_mpu_ak8963_data_00 = {
-	.bus		= EXT_SLAVE_BUS_PRIMARY,
-	.orientation = {0, -1, 0,
-			1, 0, 0,
-			0, 0, 1},
-	};
+};
+
+/* compass */
+static struct ext_slave_platform_data inv_mpu_ak8963_data_spr = {
+.bus		= EXT_SLAVE_BUS_PRIMARY,
+.orientation = { 1,  0,  0,
+		 0,  1,  0,
+		 0,  0,  1},
+};
+
+static struct ext_slave_platform_data inv_mpu_ak8963_data_vzw = {
+.bus		= EXT_SLAVE_BUS_PRIMARY,
+.orientation = {-1,  0,  0,
+		 0,  1,  0,
+		 0,  0, -1},
+};
+
+static struct ext_slave_platform_data inv_mpu_ak8963_data_att = {
+.bus		= EXT_SLAVE_BUS_PRIMARY,
+.orientation = { 0,  1,  0,
+		-1,  0,  0,
+		 0,  0,  1},
+};
 #endif
 
 #ifdef CONFIG_MPU_SENSORS_MPU6050B1
@@ -2373,15 +2365,15 @@ static void mpl_init(void)
 		mpu_data = mpu_data_00;
 	mpu_data.reset = gpio_rev(GPIO_MAG_RST);
 #elif defined(CONFIG_MPU_SENSORS_MPU6050B1_411)
-	if (system_rev <= BOARD_REV04 && system_rev > BOARD_REV01) {
-		mpu6050_data = mpu6050_data_04;
-		inv_mpu_ak8963_data = inv_mpu_ak8963_data_04;
-	} else if (system_rev == BOARD_REV01) {
-		mpu6050_data = mpu6050_data_01;
-		inv_mpu_ak8963_data = inv_mpu_ak8963_data_01;
-	} else if (system_rev < BOARD_REV01) {
-		mpu6050_data = mpu6050_data_00;
-		inv_mpu_ak8963_data = inv_mpu_ak8963_data_00;
+	if (system_rev == BOARD_REV14) {
+		mpu6050_data = mpu6050_data_spr;
+		inv_mpu_ak8963_data = inv_mpu_ak8963_data_spr;
+	} else if (system_rev == BOARD_REV15) {
+		mpu6050_data = mpu6050_data_vzw;
+		inv_mpu_ak8963_data = inv_mpu_ak8963_data_vzw;
+	} else if (system_rev == BOARD_REV16) {
+		mpu6050_data = mpu6050_data_att;
+		inv_mpu_ak8963_data = inv_mpu_ak8963_data_att;
 	}
 	if (system_rev < BOARD_REV13)
 		mpu6050_data.reset = gpio_rev(GPIO_MAG_RST);
@@ -5243,7 +5235,7 @@ static struct platform_device *m2_devices[] __initdata = {
 #endif
 #ifdef CONFIG_BATTERY_MAX17040
 	&fuelgauge_i2c_gpio_device,
-#endif 
+#endif
 #ifdef CONFIG_BATTERY_SEC
 	&sec_device_battery,
 #endif
@@ -5348,14 +5340,14 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 		true,
 		415, 715, 340827, 475,
 	},
-
+#if defined(CONFIG_MSM_STANDALONE_POWER_COLLAPSE)
 	{
 		MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE,
 		MSM_RPMRS_LIMITS(ON, ACTIVE, MAX, ACTIVE),
 		true,
 		1300, 228, 1200000, 2000,
 	},
-
+#endif
 	{
 		MSM_PM_SLEEP_MODE_POWER_COLLAPSE,
 		MSM_RPMRS_LIMITS(ON, GDHS, MAX, ACTIVE),
@@ -6246,7 +6238,13 @@ static void __init samsung_m2_init(void)
 	msm8960_add_vidc_device();
 
 	msm8960_pm8921_gpio_mpp_init();
+	/* Don't add modem devices on APQ targets */
+	if (socinfo_get_id() != 124) {
+		platform_device_register(&msm_8960_q6_mss_fw);
+		platform_device_register(&msm_8960_q6_mss_sw);
+	}
 	platform_add_devices(m2_devices, ARRAY_SIZE(m2_devices));
+	msm8960_init_smsc_hub();
 	msm8960_init_hsic();
 	samsung_sys_class_init();
 #ifdef CONFIG_MSM_CAMERA
