@@ -1907,7 +1907,7 @@ void msm_fb_release_timeline(struct msm_fb_data_type *mfd)
 {
 	u32 commit_cnt;
 	mutex_lock(&mfd->sync_mutex);
-	commit_cnt = atomic_read(&mfd->commit_cnt) + 2;
+	commit_cnt = atomic_read(&mfd->commit_cnt) + 3;
 	if (commit_cnt < 0)
 		commit_cnt = 0;
 	if (mfd->timeline) {
