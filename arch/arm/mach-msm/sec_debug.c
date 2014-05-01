@@ -1031,15 +1031,17 @@ static int sec_debug_panic_handler(struct notifier_block *nb,
 #ifndef CONFIG_MACH_JF
 #ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
 	if (!enable && !enable_cp_debug) {
-#endif
+#endif /* CONFIG_SEC_SSR_DEBUG_LEVEL_CHK */
 #else
 	if (!enable) {
-#endif
+#endif /* CONFIG_MACH_JF */
+#if defined(CONFIG_MACH_JF) || defined(CONFIG_SEC_SSR_DEBUG_LEVEL_CHK)
 #ifdef CONFIG_SEC_DEBUG_LOW_LOG
 		sec_debug_hw_reset();
-#endif
+#endif /* CONFIG_SEC_DEBUG_LOW_LOG */
 		return -EPERM;
 	}
+#endif /* defined(CONFIG_MACH_JF) || defined(CONFIG_SEC_SSR_DEBUG_LEVEL_CHK) */
 	len = strnlen(buf, 15);
 	if (!strncmp(buf, "User Fault", len))
 		sec_debug_set_upload_cause(UPLOAD_CAUSE_USER_FAULT);
