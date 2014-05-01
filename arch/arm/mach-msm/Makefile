@@ -466,6 +466,8 @@ obj-$(CONFIG_MACH_SERRANO_VZW) += sec-switch_serrano.o
 obj-$(CONFIG_MACH_SERRANO_LRA) += sec-switch_serrano.o
 endif
 
+obj-$(CONFIG_MSM_USE_USER_ACCESSIBLE_TIMERS) += timer_page.o
+
 obj-$(CONFIG_MSM_CPR) += msm_cpr.o
 obj-$(CONFIG_MSM_VP_REGULATOR) += msm_vp.o
 
