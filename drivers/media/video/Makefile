@@ -216,8 +216,7 @@ ifeq ($(CONFIG_MACH_JACTIVE_ATT),y)
 obj-$(CONFIG_MSM_CAMERA) += msm-bayer/
 else ifeq ($(CONFIG_MACH_JACTIVE_EUR),y)
 obj-$(CONFIG_MSM_CAMERA) += msm-bayer/
-else
-ifeq ($(CONFIG_ISX012),y)
+else ifeq ($(CONFIG_ISX012),y)
 obj-$(CONFIG_MSM_CAMERA) += msm_apexq/
 else
 obj-$(CONFIG_MSM_CAMERA) += msm/
