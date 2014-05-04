@@ -5596,4 +5596,3 @@ __init void init_sched_fair_class(void)
 #endif /* SMP */
 
 }
-
