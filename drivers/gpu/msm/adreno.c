@@ -582,11 +582,6 @@ static void adreno_cleanup_pt(struct kgsl_device *device,
 	kgsl_mmu_put_gpuaddr(pagetable, &device->memstore);
 #endif
 
-	kgsl_mmu_unmap(pagetable, &adreno_dev->pwron_fixup);
-#if !defined(CONFIG_MSM_IOMMU) && defined(CONFIG_SEC_PRODUCT_8960)
-	kgsl_mmu_put_gpuaddr(pagetable, &adreno_dev->pwron_fixup);
-#endif
-
 	kgsl_mmu_unmap(pagetable, &device->mmu.setstate_memory);
 #if !defined(CONFIG_MSM_IOMMU) && defined(CONFIG_SEC_PRODUCT_8960)
 	kgsl_mmu_put_gpuaddr(pagetable, &device->mmu.setstate_memory);
