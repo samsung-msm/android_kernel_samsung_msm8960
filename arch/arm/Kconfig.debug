@@ -304,6 +304,7 @@ comment "Samsung Debugging Feature"
 menuconfig SEC_DEBUG
 	bool "Samsung TN Ramdump Feature"
 	default n
+	select SEC_DEBUG_SCHED_LOG
 	help
 	  Samsung TN Ramdump Feature.
 	  Enables collection of ram dump.
