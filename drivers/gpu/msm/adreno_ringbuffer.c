@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2007-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2002,2007-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -57,7 +57,7 @@ adreno_ringbuffer_waitspace(struct adreno_ringbuffer *rb,
 				struct adreno_context *context,
 				unsigned int numcmds, int wptr_ahead)
 {
-	int nopcount;
+	int nopcount, i;
 	unsigned int freecmds;
 	unsigned int *cmds;
 	uint cmds_gpu;
@@ -77,6 +77,13 @@ adreno_ringbuffer_waitspace(struct adreno_ringbuffer *rb,
 		cmds_gpu = rb->buffer_desc.gpuaddr + sizeof(uint)*rb->wptr;
 
 		GSL_RB_WRITE(cmds, cmds_gpu, cp_nop_packet(nopcount));
+
+		/*
+		 * Fill remaining ring buffer data with KGSL_NOP_DATA_FILLER
+		 * to avoid misinterpretation in recovery extraction logic.
+		 */
+		for (i = 0; i < nopcount; i++)
+			GSL_RB_WRITE(cmds, cmds_gpu, KGSL_NOP_DATA_FILLER);
 
 		/* Make sure that rptr is not 0 before submitting
 		 * commands at the end of ringbuffer. We do not
@@ -584,28 +591,12 @@ adreno_ringbuffer_addcmds(struct adreno_ringbuffer *rb,
 	if (flags & KGSL_CMD_FLAGS_EOF)
 		total_sizedwords += 2;
 
-	/* Add space for the power on shader fixup if we need it */
-	if (flags & KGSL_CMD_FLAGS_PWRON_FIXUP)
-		total_sizedwords += 5;
-
 	ringcmds = adreno_ringbuffer_allocspace(rb, context, total_sizedwords);
 	if (!ringcmds)
 		return -ENOSPC;
 
 	rcmd_gpu = rb->buffer_desc.gpuaddr
 		+ sizeof(uint)*(rb->wptr-total_sizedwords);
-
-	if (flags & KGSL_CMD_FLAGS_PWRON_FIXUP) {
-		GSL_RB_WRITE(ringcmds, rcmd_gpu, cp_nop_packet(1));
-		GSL_RB_WRITE(ringcmds, rcmd_gpu,
-				KGSL_PWRON_FIXUP_IDENTIFIER);
-		GSL_RB_WRITE(ringcmds, rcmd_gpu,
-			CP_HDR_INDIRECT_BUFFER_PFD);
-		GSL_RB_WRITE(ringcmds, rcmd_gpu,
-			adreno_dev->pwron_fixup.gpuaddr);
-		GSL_RB_WRITE(ringcmds, rcmd_gpu,
-			adreno_dev->pwron_fixup_dwords);
-	}
 
 	GSL_RB_WRITE(ringcmds, rcmd_gpu, cp_nop_packet(1));
 	GSL_RB_WRITE(ringcmds, rcmd_gpu, KGSL_CMD_IDENTIFIER);
@@ -1085,22 +1076,9 @@ adreno_ringbuffer_issueibcmds(struct kgsl_device_private *dev_priv,
 	} else
 		drawctxt->timestamp++;
 
-	flags &= KGSL_CMD_FLAGS_EOF;
-
-	/*
-	 * For some targets, we need to execute a dummy shader operation after a
-	 * power collapse
-	 */
-
-	if (test_and_clear_bit(ADRENO_DEVICE_PWRON, &adreno_dev->priv) &&
-	    test_bit(ADRENO_DEVICE_PWRON_FIXUP, &adreno_dev->priv))
-	{
-		flags |= KGSL_CMD_FLAGS_PWRON_FIXUP;
-	}
-
 	ret = adreno_ringbuffer_addcmds(&adreno_dev->ringbuffer,
 					drawctxt,
-					flags,
+					(flags & KGSL_CMD_FLAGS_EOF),
 					&link[0], (cmds - link));
 	if (ret)
 		goto done;

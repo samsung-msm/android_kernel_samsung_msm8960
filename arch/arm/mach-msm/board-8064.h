@@ -87,6 +87,8 @@ extern void msm_otg_set_vbus_state(int online);
 extern void msm_otg_set_id_state(int online);
 extern void msm_otg_set_smartdock_state(int online);
 
+int __init apq8064_add_uio(void);
+
 void apq8064_init_mmc(void);
 void apq8064_init_gpiomux(void);
 void apq8064_init_pmic(void);
