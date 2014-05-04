@@ -382,6 +382,7 @@ config SENSORS_APDS990X
 config SAMSUNG_JACK
         bool "3.5 PI JACK driver for Samsung devices"
         depends on INPUT
+        select INPUT_GPIO
         default n
         ---help---
 	   This option enables gadget support for JACK controller. If
