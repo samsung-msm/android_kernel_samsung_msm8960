@@ -13,8 +13,10 @@
 #define pr_fmt(fmt)     "%s: " fmt, __func__
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
+#include <linux/stat.h>
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/workqueue.h>
@@ -24,8 +26,6 @@
 #include <linux/mfd/pm8xxx/pwm.h>
 #include <linux/leds-pm8xxx.h>
 #include <linux/sched.h>
-#include <linux/stat.h>
-#include <linux/export.h>
 
 #define SSBI_REG_ADDR_LED_CTRL_BASE     0x131
 #define SSBI_REG_ADDR_LED_CTRL(n)       (SSBI_REG_ADDR_LED_CTRL_BASE + (n))
@@ -290,8 +290,8 @@ static ssize_t led_pattern_store(struct device *dev,
 	case '6':
 		info->color2 = 0x82ff;
 		info->time1 = 50;
-		info->time2 = 400;
-		info->timetrans = 250;
+		info->time2 = 50;
+		info->timetrans = 1000;
 		break;
 	default:
 		info->pattern = 0;
