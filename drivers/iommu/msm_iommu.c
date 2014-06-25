@@ -1258,7 +1258,7 @@ irqreturn_t msm_iommu_fault_handler(int irq, void *dev_id)
 			ret = report_iommu_fault(ctx_drvdata->attached_domain,
 						&ctx_drvdata->pdev->dev,
 						GET_FAR(base, num), 0);
-#if 0
+
 		if (ret == -ENOSYS) {
 			pr_err("Unexpected IOMMU page fault!\n");
 			pr_err("name    = %s\n", drvdata->name);
@@ -1266,7 +1266,7 @@ irqreturn_t msm_iommu_fault_handler(int irq, void *dev_id)
 			pr_err("Interesting registers:\n");
 			print_ctx_regs(base, num);
 		}
-#endif
+
 		SET_FSR(base, num, fsr);
 		/*
 		 * Only resume fetches if the registered fault handler
