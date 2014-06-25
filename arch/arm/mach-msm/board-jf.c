@@ -2288,7 +2288,6 @@ static int ice4_clock_en(int onoff)
 		if (!fpga_main_clk)
 			fpga_main_clk = clk_get(NULL, "gp0_clk");
 
-/* TODO invisiblek
 		if (onoff) {
 			clk_set_rate(fpga_main_clk, 24000000);
 			clk_prepare_enable(fpga_main_clk);
@@ -2297,7 +2296,6 @@ static int ice4_clock_en(int onoff)
 		       clk_put(fpga_main_clk);
 		       fpga_main_clk = NULL;
 		}
-*/
 	}
 	return 0;
 }
