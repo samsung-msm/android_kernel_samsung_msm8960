@@ -70,9 +70,3 @@ config MHL_D3_SUPPORT
 	---help---
 	Power saving mode of MHL chip
 endmenu
-=======
-	  MHL Version
-	  For example, those device compliant
-	  with MHL Specification version 2.0
-	  shell set this MHL_VERSION to 0x20
->>>>>>> 1521f46... jf: initial bringup

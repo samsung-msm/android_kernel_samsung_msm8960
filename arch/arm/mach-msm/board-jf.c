@@ -3751,25 +3751,25 @@ static struct platform_device gpio_ir_recv_pdev = {
 static struct sec_jack_zone jack_zones[] = {
 	[0] = {
 		.adc_high	= 3,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[1] = {
 		.adc_high	= 745,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[2] = {
 		.adc_high	= 1679,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
 	},
 	[3] = {
 		.adc_high	= 9999,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
 	},
@@ -3778,25 +3778,25 @@ static struct sec_jack_zone jack_zones[] = {
 static struct sec_jack_zone jack_zones_rev7[] = {
 	[0] = {
 		.adc_high	= 3,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[1] = {
 		.adc_high	= 690,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[2] = {
 		.adc_high	= 1443,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
 	},
 	[3] = {
 		.adc_high	= 9999,
-		.delay_ms	= 10,
+		.delay_us	= 10000,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
 	},
@@ -3872,8 +3872,8 @@ static struct sec_jack_platform_data sec_jack_data = {
 	.num_zones		= ARRAY_SIZE(jack_zones),
 	.buttons_zones		= jack_buttons_zones,
 	.num_buttons_zones	= ARRAY_SIZE(jack_buttons_zones),
-	.det_int		= GPIO_EAR_DET,
-	.send_int		= GPIO_SHORT_SENDEND,
+	.det_gpio		= GPIO_EAR_DET,
+	.send_end_gpio		= GPIO_SHORT_SENDEND,
 	.send_end_active_high	= false,
 };
 
