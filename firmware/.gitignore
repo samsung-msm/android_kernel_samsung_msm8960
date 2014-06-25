@@ -4,3 +4,4 @@
 *.csp
 *.dsp
 ihex2fw
+!audience-es325-fw-jf.bin
