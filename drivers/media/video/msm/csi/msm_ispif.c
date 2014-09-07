@@ -770,8 +770,16 @@ static int msm_ispif_init(const uint32_t *csid_version)
 
 static void msm_ispif_release(struct v4l2_subdev *sd)
 {
+<<<<<<< HEAD
 	struct ispif_device *ispif =
 	    (struct ispif_device *)v4l2_get_subdevdata(sd);
+
+        BUG_ON(!ispif);
+
+	if (!ispif->base) {
+	        pr_err("%s: ispif base is NULL\n", __func__);
+	        return;
+        }
 
 	if (ispif->csid_version == CSID_VERSION_V2)
 		msm_cam_clk_enable(&ispif->pdev->dev, ispif_clk_info,
