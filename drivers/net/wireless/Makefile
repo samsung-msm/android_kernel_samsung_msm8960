@@ -61,7 +61,7 @@ obj-$(CONFIG_MWIFIEX)	+= mwifiex/
 
 obj-$(CONFIG_BCMDHD)	+= bcmdhd/
 obj-$(CONFIG_BCM4330)	+= bcmdhd/
-obj-$(CONFIG_BCM4334)	+= bcmdhd4354/
+obj-$(CONFIG_BCM4334)	+= bcmdhd/
 obj-$(CONFIG_BCM43241)	+= bcmdhd/
 obj-$(CONFIG_BCM4335)	+= bcmdhd/
 
