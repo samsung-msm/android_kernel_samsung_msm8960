@@ -770,7 +770,6 @@ static int msm_ispif_init(const uint32_t *csid_version)
 
 static void msm_ispif_release(struct v4l2_subdev *sd)
 {
-<<<<<<< HEAD
 	struct ispif_device *ispif =
 	    (struct ispif_device *)v4l2_get_subdevdata(sd);
 
