@@ -2823,9 +2823,34 @@ int mgmt_powered(u16 index, u8 powered)
 
 	mgmt_pending_foreach(MGMT_OP_SET_POWERED, index, mode_rsp, &match);
 
+<<<<<<< HEAD
 	if (!powered) {
 		u8 status = ENETDOWN;
 		mgmt_pending_foreach(0, index, cmd_status_rsp, &status);
+=======
+		if (test_bit(HCI_SSP_ENABLED, &hdev->dev_flags)) {
+			u8 ssp = 1;
+
+			hci_send_cmd(hdev, HCI_OP_WRITE_SSP_MODE, 1, &ssp);
+		}
+
+		if (test_bit(HCI_LE_ENABLED, &hdev->dev_flags)) {
+			struct hci_cp_write_le_host_supported cp;
+
+			cp.le = 1;
+			cp.simul = !!(hdev->features[6] & LMP_SIMUL_LE_BR);
+
+			hci_send_cmd(hdev, HCI_OP_WRITE_LE_HOST_SUPPORTED,
+				     sizeof(cp), &cp);
+		}
+
+		update_class(hdev);
+		update_name(hdev, hdev->dev_name);
+		update_eir(hdev);
+	} else {
+		u8 status = MGMT_STATUS_NOT_POWERED;
+		mgmt_pending_foreach(0, hdev, cmd_status_rsp, &status);
+>>>>>>> 1c7eb28096b50831697a9cf6f8bf1af0e5b234bc
 	}
 
 	ev.val = powered;

@@ -1080,15 +1080,25 @@ clean:
 
 static void l2cap_conn_ready(struct l2cap_conn *conn)
 {
+<<<<<<< HEAD
 	struct l2cap_chan_list *l = &conn->chan_list;
 	struct sock *sk;
+=======
+	struct l2cap_chan *chan;
+	struct hci_conn *hcon = conn->hcon;
+>>>>>>> 1c7eb28096b50831697a9cf6f8bf1af0e5b234bc
 
 	BT_DBG("conn %p", conn);
 
-	if (!conn->hcon->out && conn->hcon->type == LE_LINK)
+	if (!hcon->out && hcon->type == LE_LINK)
 		l2cap_le_conn_ready(conn);
 
+<<<<<<< HEAD
 	read_lock(&l->lock);
+=======
+	if (hcon->out && hcon->type == LE_LINK)
+		smp_conn_security(hcon, hcon->pending_sec_level);
+>>>>>>> 1c7eb28096b50831697a9cf6f8bf1af0e5b234bc
 
 	if (l->head) {
 		for (sk = l->head; sk; sk = l2cap_pi(sk)->next_c) {
@@ -1101,8 +1111,14 @@ static void l2cap_conn_ready(struct l2cap_conn *conn)
 				if (pending_sec > sec_level)
 					sec_level = pending_sec;
 
+<<<<<<< HEAD
 				if (smp_conn_security(conn, sec_level))
 					l2cap_chan_ready(sk);
+=======
+		if (hcon->type == LE_LINK) {
+			if (smp_conn_security(hcon, chan->sec_level))
+				l2cap_chan_ready(chan);
+>>>>>>> 1c7eb28096b50831697a9cf6f8bf1af0e5b234bc
 
 				hci_conn_put(conn->hcon);
 
