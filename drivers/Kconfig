@@ -107,8 +107,6 @@ source "drivers/switch/Kconfig"
 
 source "drivers/accessibility/Kconfig"
 
-source "drivers/accessory/Kconfig"
-
 source "drivers/infiniband/Kconfig"
 
 source "drivers/edac/Kconfig"
