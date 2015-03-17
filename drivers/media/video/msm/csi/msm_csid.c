@@ -62,7 +62,20 @@ static int msm_csid_cid_lut(
 	int rc = 0, i = 0;
 	uint32_t val = 0;
 
+	if (!csid_lut_params) {
+		pr_err("%s:%d csid_lut_params NULL\n", __func__, __LINE__);
+		return -EINVAL;
+	}
+
 	for (i = 0; i < csid_lut_params->num_cid && i < 4; i++) {
+		if (csid_lut_params->vc_cfg[i].cid >=
+			csid_lut_params->num_cid ||
+			csid_lut_params->vc_cfg[i].cid < 0) {
+			pr_err("%s: cid outside range %d\n",
+				__func__, csid_lut_params->vc_cfg[i].cid);
+			return -EINVAL;
+		}
+
 		if (csid_lut_params->vc_cfg[i].dt < 0x12 ||
 			csid_lut_params->vc_cfg[i].dt > 0x37) {
 			CDBG("%s: unsupported data type 0x%x\n",
