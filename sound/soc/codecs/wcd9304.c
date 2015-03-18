@@ -6520,10 +6520,10 @@ err_potential_irq:
 err_remove_irq:
 	wcd9xxx_free_irq(codec->control_data,
 			SITAR_IRQ_MBHC_INSERTION, sitar);
+*/
 err_hwdep:
 err_insert_irq:
 	kfree(sitar->fw_data);
-*/
 err_nomem_slimch:
 err_pdata:
 	mutex_destroy(&sitar->codec_resource_lock);
