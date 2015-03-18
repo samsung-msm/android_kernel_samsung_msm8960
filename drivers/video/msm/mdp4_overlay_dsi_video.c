@@ -872,7 +872,7 @@ int mdp4_dsi_video_off(struct platform_device *pdev)
 		mixer = pipe->mixer_num;
 		mdp4_overlay_unset_mixer(mixer);
 		if (mfd->ref_cnt == 0) {
-			mdp4_dsi_video_free_base_pipe(mfd)
+			mdp4_dsi_video_free_base_pipe(mfd);
 		} else {
 			/* system suspending */
 			mdp4_mixer_stage_down(vctrl->base_pipe, 1);
