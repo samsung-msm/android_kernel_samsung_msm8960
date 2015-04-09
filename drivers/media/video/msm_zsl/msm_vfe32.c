@@ -11,16 +11,15 @@
  */
 
 #include <linux/uaccess.h>
+#include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/slab.h>
 #include <linux/io.h>
-#include <linux/module.h>
 #include <linux/atomic.h>
 #include <linux/regulator/consumer.h>
 #include <linux/clk.h>
 #include <mach/irqs.h>
 #include <mach/camera.h>
-#include <mach/iommu.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 #include <media/msm_isp.h>
@@ -30,10 +29,9 @@
 
 #include "msm.h"
 #include "msm_vfe32.h"
-#include "csi/msm_ispif.h"		/*aswoogi_zsl */
+#include "msm_ispif.h"		/*aswoogi_zsl */
 
 atomic_t irq_cnt;
-extern unsigned int open_fail_flag;
 
 #define QC_TEST
 
@@ -62,9 +60,7 @@ extern unsigned int open_fail_flag;
 	(((ping_pong) & (1 << (chn))) == 0 ?   \
 	vfe32_put_ch_pong_addr((chn), (addr)) : \
 	vfe32_put_ch_ping_addr((chn), (addr)))
-#if defined(CONFIG_MSM_IOMMU) && defined(VFE_IOMMU_FAULT_HANDLER)
-static atomic_t fault_recovery;
-#endif
+
 static void vfe32_set_default_reg_values(void);
 static struct vfe32_ctrl_type *vfe32_ctrl;
 static void *vfe_syncdata;
@@ -450,19 +446,15 @@ static void vfe32_stop(void)
 
 static void vfe32_subdev_notify(int id, int path)
 {
-	struct msm_vfe_resp *rp;
+	struct msm_vfe_resp rp;
 	unsigned long flags = 0;
 	spin_lock_irqsave(&vfe32_ctrl->sd_notify_lock, flags);
-	rp = msm_isp_sync_alloc(sizeof(struct msm_vfe_resp), GFP_ATOMIC);
-	if (!rp) {
-		CDBG("rp: cannot allocate buffer\n");
-		return;
-	}
 	CDBG("vfe32_subdev_notify : msgId = %d\n", id);
-	rp->evt_msg.type = MSM_CAMERA_MSG;
-	rp->evt_msg.msg_id = path;
-	rp->type = id;
-	v4l2_subdev_notify(&vfe32_ctrl->subdev, NOTIFY_VFE_BUF_EVT, rp);
+	memset(&rp, 0, sizeof(struct msm_vfe_resp));
+	rp.evt_msg.type   = MSM_CAMERA_MSG;
+	rp.evt_msg.msg_id = path;
+	rp.type	   = id;
+	v4l2_subdev_notify(&vfe32_ctrl->subdev, NOTIFY_VFE_BUF_EVT, &rp);
 	spin_unlock_irqrestore(&vfe32_ctrl->sd_notify_lock, flags);
 }
 
@@ -1465,7 +1457,7 @@ static int vfe32_proc_general(struct msm_isp_cmd *cmd)
 	CDBG("vfe32_proc_general: cmdID = %s, length = %d\n",
 	     vfe32_general_cmd[cmd->id], cmd->length);
 
-	if (vfe32_ctrl->vfebase == NULL || open_fail_flag) {
+	if (vfe32_ctrl->vfebase == NULL) {
 	    pr_err("Error : vfe32_ctrl->vfebase is NULL!!\n");
 	    pr_err("vfe32_proc_general: cmdID = %s, length = %d\n",
 		 vfe32_general_cmd[cmd->id], cmd->length);
@@ -3277,12 +3269,9 @@ static void vfe32_process_zsl_frame(void)
 			vfe32_put_ch_addr(ping_pong,
 					  vfe32_ctrl->outpath.out2.ch2,
 					  free_buf_s->ch_paddr[2]);
-		if(free_buf_t)
-		{
-			CDBG("mainimg put ch0_paddr = 0x%x", free_buf_t->ch_paddr[0]);
-			CDBG("mainimg put ch1_paddr = 0x%x", free_buf_t->ch_paddr[1]);
-			CDBG("mainimg put ch2_paddr = 0x%x", free_buf_t->ch_paddr[2]);
-		}
+		CDBG("mainimg put ch0_paddr = 0x%x", free_buf_t->ch_paddr[0]);
+		CDBG("mainimg put ch1_paddr = 0x%x", free_buf_t->ch_paddr[1]);
+		CDBG("mainimg put ch2_paddr = 0x%x", free_buf_t->ch_paddr[2]);
 
 		vfe_send_outmsg(&vfe32_ctrl->subdev,
 				MSG_ID_OUTPUT_S, ch0_paddr,
@@ -4309,7 +4298,7 @@ int msm_vfe_subdev_init(struct v4l2_subdev *sd, void *data,
 
 	if (vfe32_ctrl->fs_vfe == NULL) {
 		vfe32_ctrl->fs_vfe =
-		    regulator_get(&vfe32_ctrl->pdev->dev, "fs_vfe");
+		    regulator_get(&vfe32_ctrl->pdev->dev, "vdd");
 		if (IS_ERR(vfe32_ctrl->fs_vfe)) {
 			pr_err("%s: Regulator FS_VFE get failed %ld\n",
 			       __func__, PTR_ERR(vfe32_ctrl->fs_vfe));
