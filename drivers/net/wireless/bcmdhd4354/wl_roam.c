@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: wl_roam.c 449533 2014-01-17 07:30:25Z $
+ * $Id: wl_roam.c 464529 2014-03-25 06:02:53Z $
  */
 
 #include <typedefs.h>
@@ -29,7 +29,9 @@
 #include <bcmwifi_channels.h>
 #include <wlioctl.h>
 #include <bcmutils.h>
+#ifdef WL_CFG80211
 #include <wl_cfg80211.h>
+#endif
 #include <wldev_common.h>
 
 #define MAX_ROAM_CACHE		100
@@ -369,5 +371,54 @@ void update_roam_cache(struct bcm_cfg80211 *cfg, int ioctl_ver)
 		if (error) {
 			WL_ERR(("Failed to update roamscan channels, error = %d\n", error));
 		}
+	}
+}
+
+void wl_update_roamscan_cache_by_band(struct net_device *dev, int band)
+{
+	int i, error, ioctl_ver, wes_mode;
+	channel_list_t chanlist_before, chanlist_after;
+	char iobuf[WLC_IOCTL_SMLEN];
+
+	roam_band = band;
+	if (band == WLC_BAND_AUTO)
+		return;
+
+	error = wldev_iovar_getint(dev, "roamscan_mode", &wes_mode);
+	if (error) {
+		WL_ERR(("Failed to get roamscan mode, error = %d\n", error));
+		return;
+	}
+	/* in case of WES mode, then skip the update */
+	if (wes_mode)
+		return;
+
+	error = wldev_iovar_getbuf(dev, "roamscan_channels", 0, 0,
+		(void *)&chanlist_before, sizeof(channel_list_t), NULL);
+	if (error) {
+		WL_ERR(("Failed to get roamscan channels, error = %d\n", error));
+		return;
+	}
+	ioctl_ver = wl_cfg80211_get_ioctl_version();
+	chanlist_after.n = 0;
+	/* filtering by the given band */
+	for (i = 0; i < chanlist_before.n; i++) {
+		chanspec_t chspec = chanlist_before.channels[i];
+		bool is_2G = ioctl_ver == 1 ? LCHSPEC_IS2G(chspec) : CHSPEC_IS2G(chspec);
+		bool is_5G = ioctl_ver == 1 ? LCHSPEC_IS5G(chspec) : CHSPEC_IS5G(chspec);
+		bool band_match = ((band == WLC_BAND_2G) && is_2G) ||
+			((band == WLC_BAND_5G) && is_5G);
+		if (band_match) {
+			chanlist_after.channels[chanlist_after.n++] = chspec;
+		}
+	}
+
+	if (chanlist_before.n == chanlist_after.n)
+		return;
+
+	error = wldev_iovar_setbuf(dev, "roamscan_channels", &chanlist_after,
+		sizeof(channel_list_t), iobuf, sizeof(iobuf), NULL);
+	if (error) {
+		WL_ERR(("Failed to update roamscan channels, error = %d\n", error));
 	}
 }

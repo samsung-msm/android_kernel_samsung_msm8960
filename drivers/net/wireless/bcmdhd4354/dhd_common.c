@@ -77,11 +77,6 @@ int dhd_msg_level = DHD_ERROR_VAL;
 
 #include <wl_iw.h>
 
-#ifdef WRITE_WLANINFO
-char fw_path[MOD_PARAM_PATHLEN];
-char nv_path[MOD_PARAM_PATHLEN];
-#endif
-
 #ifdef SOFTAP
 char fw_path2[MOD_PARAM_PATHLEN];
 extern bool softap_enabled;
@@ -293,15 +288,11 @@ dhd_wl_ioctl(dhd_pub_t *dhd_pub, int ifindex, wl_ioctl_t *ioc, void *buf, int le
 
 		ret = dhd_prot_ioctl(dhd_pub, ifindex, ioc, buf, len);
 #if defined(CUSTOMER_HW4)
-		if ((ret || ret == -ETIMEDOUT || ret == BCME_NOMEM) && (dhd_pub->up))
+		if ((ret || ret == -ETIMEDOUT) && (dhd_pub->up))
 #else
 		if ((ret) && (dhd_pub->up))
 #endif /* CUSTOMER_HW4 */
 			/* Send hang event only if dhd_open() was success */
-			if(ret == BCME_NOMEM) {
-				dhd_console_ms = 1;
-				dhd_bus_console_in(dhd_pub, "mu", strlen("mu"));
-			}
 			dhd_os_check_hang(dhd_pub, ifindex, ret);
 
 		if (ret == -ETIMEDOUT && !dhd_pub->up) {

@@ -329,7 +329,7 @@ ion_phys_addr_t ion_cp_allocate(struct ion_heap *heap,
 	if (!force_contig && !secure_allocation &&
 	     cp_heap->disallow_non_secure_allocation) {
 		mutex_unlock(&cp_heap->lock);
-		pr_debug("%s: non-secure allocation disallowed from this heap\n",
+		pr_info("%s: non-secure allocation disallowed from this heap\n",
 			__func__);
 		return ION_CP_ALLOCATE_FAIL;
 	}
@@ -365,7 +365,7 @@ ion_phys_addr_t ion_cp_allocate(struct ion_heap *heap,
 		cp_heap->allocated_bytes -= size;
 		if ((cp_heap->total_size -
 		     cp_heap->allocated_bytes) >= size)
-			pr_debug("%s: heap %s has enough memory (%lx) but"
+			pr_info("%s: heap %s has enough memory (%lx) but"
 				" the allocation of size %lx still failed."
 				" Memory is probably fragmented.\n",
 				__func__, heap->name,

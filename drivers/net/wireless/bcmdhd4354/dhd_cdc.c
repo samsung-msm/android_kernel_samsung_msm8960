@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_cdc.c 449353 2014-01-16 21:34:16Z $
+ * $Id: dhd_cdc.c 464559 2014-03-25 08:26:34Z $
  *
  * BDC is like CDC, except it includes a header for data packets to convey
  * packet priority over the bus, and flags (e.g. to indicate checksum status
@@ -296,6 +296,14 @@ done:
 }
 
 
+void
+dhd_prot_pending(dhd_pub_t * dhd, bool flag)
+{
+	dhd_prot_t *prot = dhd->prot;
+
+	prot->pending = flag;
+}
+
 int
 dhd_prot_ioctl(dhd_pub_t *dhd, int ifidx, wl_ioctl_t * ioc, void * buf, int len)
 {
@@ -529,7 +537,7 @@ dhd_prot_detach(dhd_pub_t *dhd)
 void
 dhd_prot_dstats(dhd_pub_t *dhd)
 {
-	/* No stats from dongle added yet, copy bus stats */
+/* No stats from dongle added yet, copy bus stats */
 	dhd->dstats.tx_packets = dhd->tx_packets;
 	dhd->dstats.tx_errors = dhd->tx_errors;
 	dhd->dstats.rx_packets = dhd->rx_packets;

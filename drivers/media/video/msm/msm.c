@@ -1737,7 +1737,6 @@ static int msm_close(struct file *f)
 	mutex_destroy(&pcam_inst->inst_lock);
 	kfree(pcam_inst);
 	f->private_data = NULL;
-	pr_err("%s after pcam_inst free\n", __func__);
 	if (pcam->use_count == 0) {
 		v4l2_device_unregister_subdev(pcam->mctl.isp_sdev->sd);
 		v4l2_device_unregister_subdev(pcam->mctl.isp_sdev->sd_vpe);
@@ -1760,7 +1759,6 @@ static int msm_close(struct file *f)
 #endif
 	}
 	mutex_unlock(&pcam->vid_lock);
-	pr_err("%s reached return, pcam still not freed\n", __func__);
 	return rc;
 }
 

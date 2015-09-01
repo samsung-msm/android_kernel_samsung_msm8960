@@ -185,14 +185,14 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"AI", "AI", 1},
 	{"AF", "AD", 0},
 	{"AG", "AG", 2},
-	{"AR", "AR", 21},
+	{"AR", "AU", 6},
 	{"AW", "AW", 2},
 	{"AU", "AU", 6},
 	{"AT", "AT", 4},
 	{"AZ", "AZ", 2},
 	{"BS", "BS", 2},
 	{"BH", "BH", 4},
-	{"BD", "BD", 2},
+	{"BD", "AO", 0},
 	{"BY", "BY", 3},
 	{"BE", "BE", 4},
 	{"BM", "BM", 12},
@@ -255,14 +255,14 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"MC", "MC", 1},
 	{"ME", "ME", 2},
 	{"MA", "MA", 2},
-	{"NP", "NP", 3},
+	{"NP", "ID", 5},
 	{"NL", "NL", 4},
-	{"AN", "AN", 2},
+	{"AN", "GD", 2},
 	{"NZ", "NZ", 4},
 	{"NO", "NO", 4},
 	{"OM", "OM", 4},
 	{"PA", "PA", 17},
-	{"PG", "PG", 2},
+	{"PG", "AU", 6},
 	{"PY", "PY", 2},
 	{"PE", "PE", 20},
 	{"PH", "PH", 5},
@@ -291,7 +291,7 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"VA", "VA", 2},
 	{"VE", "VE", 3},
 	{"VN", "VN", 4},
-	{"ZM", "ZM", 2},
+	{"ZM", "LA", 2},
 	{"EC", "EC", 21},
 	{"SV", "SV", 25},
 	{"KR", "KR", 48},
@@ -301,6 +301,7 @@ const struct cntry_locales_custom translate_custom_table[] = {
 	{"FR", "FR", 5},
 	{"MN", "MN", 1},
 	{"NI", "NI", 2},
+	{"UZ", "MA", 2},
 #endif /* default ccode/regrev */
 };
 
@@ -354,9 +355,10 @@ void get_customized_country_code(void *adapter, char *country_iso_code, wl_count
 #define CIS_BUF_SIZE            512
 #endif /* BCM4330_CHIP */
 
-#define CIS_TUPLE_START         0x80
-#define CIS_TUPLE_VENDOR        0x81
-#define CIS_TUPLE_MACADDR       0x19
+#define CIS_TUPLE_TAG_START		0x80
+#define CIS_TUPLE_TAG_VENDOR		0x81
+#define CIS_TUPLE_TAG_MACADDR		0x19
+#define CIS_TUPLE_TAG_MACADDR_OFF	((TLV_BODY_OFF) + (1))
 
 #ifdef READ_MACADDR
 int dhd_read_macaddr(struct dhd_info *dhd, struct ether_addr *mac)
@@ -886,8 +888,9 @@ vid_info_t vid_info[] = {
 };
 #elif defined(BCM4334_CHIP)
 vid_info_t vid_info[] = {
-	{ 6, { 0x00, 0x00, 0x00,0x33, 0x33, }, { "semco" } },
-	{ 6, { 0x00, 0x00 ,0x00,0xfb, 0x50,}, { "semcosh" } },
+	{ 6, { 0x00, 0x00, 0x00, 0x33, 0x33, }, { "semco" } },
+	{ 6, { 0x00, 0x00, 0x00, 0xfb, 0x50, }, { "semcosh" } },
+	{ 6, { 0x00, 0x20, 0xc7, 0x00, 0x00, }, { "murata" } },
 	{ 0, { 0x00, }, { "murata" } }
 };
 #elif defined(BCM4335_CHIP)
@@ -959,8 +962,8 @@ int dhd_check_module_cid(dhd_pub_t *dhd)
 
 	max = sizeof(cis_buf) - 4;
 	for (idx = 0; idx < max; idx++) {
-		if (cis_buf[idx] == CIS_TUPLE_START) {
-			if (cis_buf[idx + 2] == CIS_TUPLE_VENDOR) {
+		if (cis_buf[idx] == CIS_TUPLE_TAG_START) {
+			if (cis_buf[idx + 2] == CIS_TUPLE_TAG_VENDOR) {
 				vid_length = cis_buf[idx + 1];
 				vid_start = &cis_buf[idx + 3];
 				/* found CIS tuple */
@@ -1102,32 +1105,53 @@ int dhd_check_module_mac(dhd_pub_t *dhd, struct ether_addr *mac)
 		DHD_ERROR(("[WIFI_SEC] %s: Check module mac by legacy FW : " MACDBG "\n",
 			__FUNCTION__, MAC2STRDBG(mac->octet)));
 	} else {
-		int max, idx, macaddr_idx;
+		bcm_tlv_t *elt = NULL;
+		int remained_len = sizeof(cis_buf);
+		int index = 0;
+		uint8 *mac_addr = NULL;
 #ifdef DUMP_CIS
 		dhd_dump_cis(cis_buf, 48);
 #endif
-		max = sizeof(cis_buf) - 9;
-		for (idx = 0; idx < max; idx++) {
-			if (cis_buf[idx] == CIS_TUPLE_START) {
-				if (cis_buf[idx + 2] == CIS_TUPLE_MACADDR &&
-					cis_buf[idx + 1] == 7) {
-					macaddr_idx = idx + 3;
-					/* found MAC Address tuple */
-					break;
-				} else {
-					/* Go to next tuple if tuple value
-					 * is not MAC address type
-					 */
-					idx += (cis_buf[idx + 1] + 1);
+
+		/* Find a new tuple tag */
+		while (index < remained_len) {
+			if (cis_buf[index] == CIS_TUPLE_TAG_START) {
+				remained_len -= index;
+				if (remained_len >= sizeof(bcm_tlv_t)) {
+					elt = (bcm_tlv_t *)&cis_buf[index];
 				}
+				break;
+			} else {
+				index++;
 			}
+
 		}
 
-		if (idx < max) {
+		/* Find a MAC address tuple */
+		while (elt && remained_len >= TLV_HDR_LEN) {
+			int body_len = (int)elt->len;
+
+			if ((elt->id == CIS_TUPLE_TAG_START) &&
+				(remained_len >= (body_len + TLV_HDR_LEN)) &&
+				(*elt->data == CIS_TUPLE_TAG_MACADDR)) {
+				/* found MAC Address tuple and
+				 * get the MAC Address data
+				 */
+				mac_addr = (uint8 *)elt + CIS_TUPLE_TAG_MACADDR_OFF;
+				break;
+			}
+
+			/* Go to next tuple if tuple value
+			 * is not MAC address type
+			 */
+			elt = (bcm_tlv_t *)((uint8 *)elt + (body_len + TLV_HDR_LEN));
+			remained_len -= (body_len + TLV_HDR_LEN);
+		}
+
+		if (mac_addr) {
 			sprintf(otp_mac_buf, "%02X:%02X:%02X:%02X:%02X:%02X\n",
-				cis_buf[macaddr_idx], cis_buf[macaddr_idx + 1],
-				cis_buf[macaddr_idx + 2], cis_buf[macaddr_idx + 3],
-				cis_buf[macaddr_idx + 4], cis_buf[macaddr_idx + 5]);
+				mac_addr[0], mac_addr[1], mac_addr[2],
+				mac_addr[3], mac_addr[4], mac_addr[5]);
 			DHD_ERROR(("[WIFI_SEC] MAC address is taken from OTP\n"));
 		} else {
 			sprintf(otp_mac_buf, "%02X:%02X:%02X:%02X:%02X:%02X\n",

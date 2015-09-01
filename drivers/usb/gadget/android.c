@@ -63,6 +63,9 @@
 #include "u_data_hsic.c"
 #include "u_ctrl_hsuart.c"
 #include "u_data_hsuart.c"
+#ifdef CONFIG_USB_DUN_SUPPORT
+#include "serial_acm.c"
+#endif
 #include "f_serial.c"
 #include "f_acm.c"
 #include "f_adb.c"
@@ -2877,6 +2880,15 @@ static int __devinit android_probe(struct platform_device *pdev)
 		pm_qos_add_request(&android_dev->pm_qos_req_dma,
 			PM_QOS_CPU_DMA_LATENCY, PM_QOS_DEFAULT_VALUE);
 	strlcpy(android_dev->pm_qos, "high", sizeof(android_dev->pm_qos));
+#ifdef CONFIG_USB_DUN_SUPPORT
+		ret = modem_misc_register();
+		if (ret) {
+			printk(KERN_ERR "usb: %s modem misc register is failed\n",
+					 __func__);
+			goto err_probe;
+		}
+#endif
+
 
 	return ret;
 err_probe:

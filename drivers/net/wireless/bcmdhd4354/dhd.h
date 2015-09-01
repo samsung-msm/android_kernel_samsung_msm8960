@@ -24,7 +24,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd.h 448418 2014-01-14 07:57:52Z $
+ * $Id: dhd.h 457596 2014-02-24 02:24:14Z $
  */
 
 /****************
@@ -52,6 +52,7 @@
 struct task_struct;
 struct sched_param;
 int setScheduler(struct task_struct *p, int policy, struct sched_param *param);
+int get_scheduler_policy(struct task_struct *p);
 
 #define ALL_INTERFACES	0xff
 
@@ -145,7 +146,7 @@ enum dhd_prealloc_index {
 
 /* Packet alignment for most efficient SDIO (can change based on platform) */
 #ifndef DHD_SDALIGN
-#define DHD_SDALIGN  4	
+#define DHD_SDALIGN	32
 #endif
 
 /* host reordering packts logic */
@@ -275,6 +276,7 @@ typedef struct dhd_pub {
 	0 - Do not do any proptxtstatus flow control
 	1 - Use implied credit from a packet status
 	2 - Use explicit credit
+	3 - Only AMPDU hostreorder used. no wlfc.
 	*/
 	uint8	proptxstatus_mode;
 	bool	proptxstatus_txoff;
@@ -331,7 +333,7 @@ typedef struct dhd_pub {
 #ifdef CUSTOM_SET_CPUCORE
 	struct task_struct * current_dpc;
 	struct task_struct * current_rxf;
-	bool chan_isvht80;
+	int chan_isvht80;
 #endif /* CUSTOM_SET_CPUCORE */
 } dhd_pub_t;
 #if defined(CUSTOMER_HW4)
@@ -857,12 +859,6 @@ extern uint dhd_pktgen_len;
 
 /* optionally set by a module_param_string() */
 #define MOD_PARAM_PATHLEN	2048
-
-#ifdef WRITE_WLANINFO
-extern char fw_path[MOD_PARAM_PATHLEN];
-extern char nv_path[MOD_PARAM_PATHLEN];
-#endif
-
 #define MOD_PARAM_INFOLEN	512
 
 #ifdef SOFTAP
@@ -913,7 +909,7 @@ int dhd_ndo_enable(dhd_pub_t * dhd, int ndo_enable);
 int dhd_ndo_add_ip(dhd_pub_t *dhd, char* ipaddr, int idx);
 int dhd_ndo_remove_ip(dhd_pub_t *dhd, int idx);
 /* ioctl processing for nl80211 */
-int dhd_ioctl_process(dhd_pub_t *pub, int ifidx, struct dhd_ioctl *ioc);
+int dhd_ioctl_process(dhd_pub_t *pub, int ifidx, struct dhd_ioctl *ioc, void *data_buf);
 
 #if defined(SUPPORT_MULTIPLE_REVISION)
 extern int

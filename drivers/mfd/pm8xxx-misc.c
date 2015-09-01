@@ -1248,6 +1248,12 @@ static int __devinit pm8xxx_misc_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, chip);
 
+#if defined(CONFIG_MACH_M2_VZW)
+	rc = pm8xxx_hard_reset_config(PM8XXX_DISABLE_HARD_RESET);
+	if (!rc)
+		pr_info("%s : Hard reset is disabled, rc = %d\n", __func__, rc);
+#endif
+
 #ifdef CONFIG_MACH_JF_ATT
 	/* disable pmic coincell charging under att rev06
 	 * because super cap cannot be charged under att rev06

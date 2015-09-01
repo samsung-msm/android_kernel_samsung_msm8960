@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: wl_cfgp2p.c 448685 2014-01-15 05:24:26Z $
+ * $Id: wl_cfgp2p.c 454364 2014-02-10 09:20:25Z $
  *
  */
 #include <typedefs.h>
@@ -455,13 +455,8 @@ wl_cfgp2p_ifadd(struct bcm_cfg80211 *cfg, struct ether_addr *mac, u8 if_type,
 	err = wldev_iovar_setbuf(ndev, "p2p_ifadd", &ifreq, sizeof(ifreq),
 		cfg->ioctl_buf, WLC_IOCTL_MAXLEN, &cfg->ioctl_buf_sync);
 
-	if (unlikely(err < 0)) {
+	if (unlikely(err < 0))
 		printk("'cfg p2p_ifadd' error %d\n", err);
-		CFGP2P_ERR(("---"MACDBG" %s %u\n",
-			MAC2STRDBG(ifreq.addr.octet),
-			(if_type == WL_P2P_IF_GO) ? "go" : "client",
-				(chspec & WL_CHANSPEC_CHAN_MASK) >> WL_CHANSPEC_CHAN_SHIFT));
-	}
 	else if (if_type == WL_P2P_IF_GO) {
 		err = wldev_ioctl(ndev, WLC_SET_SCB_TIMEOUT, &scb_timeout, sizeof(u32), true);
 		if (unlikely(err < 0))
@@ -2126,11 +2121,21 @@ wl_cfgp2p_set_p2p_noa(struct bcm_cfg80211 *cfg, struct net_device *ndev, char* b
 		if (duration != -1)
 			cfg->p2p->noa.desc[0].duration = duration;
 
-		if (cfg->p2p->noa.desc[0].count != 255) {
+		if (cfg->p2p->noa.desc[0].count < 255 && cfg->p2p->noa.desc[0].count > 1) {
+			cfg->p2p->noa.desc[0].start = 0;
+			dongle_noa.type = WL_P2P_SCHED_TYPE_ABS;
+			dongle_noa.action = WL_P2P_SCHED_ACTION_NONE;
+			dongle_noa.option = WL_P2P_SCHED_OPTION_TSFOFS;
+		}
+		else if (cfg->p2p->noa.desc[0].count == 1) {
 			cfg->p2p->noa.desc[0].start = 200;
 			dongle_noa.type = WL_P2P_SCHED_TYPE_REQ_ABS;
 			dongle_noa.action = WL_P2P_SCHED_ACTION_GOOFF;
 			dongle_noa.option = WL_P2P_SCHED_OPTION_TSFOFS;
+		}
+		else if (cfg->p2p->noa.desc[0].count == 0) {
+			cfg->p2p->noa.desc[0].start = 0;
+			dongle_noa.action = WL_P2P_SCHED_ACTION_RESET;
 		}
 		else {
 			/* Continuous NoA interval. */
@@ -2672,9 +2677,6 @@ wl_cfgp2p_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev *wdev)
 		CFGP2P_ERR(("P2P scan stop failed, ret=%d\n", ret));
 	}
 
-	if (!cfg->p2p)
-		return;
-
 	ret = wl_cfgp2p_disable_discovery(cfg);
 	if (unlikely(ret < 0)) {
 		CFGP2P_ERR(("P2P disable discovery failed, ret=%d\n", ret));
@@ -2690,31 +2692,12 @@ wl_cfgp2p_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev *wdev)
 int
 wl_cfgp2p_del_p2p_disc_if(struct wireless_dev *wdev, struct bcm_cfg80211 *cfg)
 {
-#ifdef RTNL_LOCK_WAR
-    bool rollback_lock = false;
-#endif
-
 	if (!wdev)
 		return -EINVAL;
 
 	WL_TRACE(("Enter\n"));
 
-#ifdef RTNL_LOCK_WAR
-    if (!rtnl_is_locked()) {
-           rtnl_lock();
-           rollback_lock = true;
-    }
-#else
-    rtnl_lock();
-#endif
-    /* cfg80211_unregister_wdev() requires RTNL to be held */
-    cfg80211_unregister_wdev(wdev);
-#ifdef RTNL_LOCK_WAR
-    if (rollback_lock)
-           rtnl_unlock();
-#else
-    rtnl_unlock();
-#endif
+	cfg80211_unregister_wdev(wdev);
 
 	kfree(wdev);
 

@@ -145,6 +145,7 @@ struct sec_bat_info {
 	struct power_supply psy_bat;
 	struct power_supply psy_usb;
 	struct power_supply psy_ac;
+	struct power_supply psy_ps;
 
 	struct wake_lock vbus_wake_lock;
 	struct wake_lock cable_wake_lock;
@@ -237,13 +238,19 @@ struct sec_bat_info {
 	bool factory_mode;
 	bool check_full_state;
 	unsigned int check_full_state_cnt;
-
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) || defined(CONFIG_MACH_M2))
 	int siop_level;
+#endif
+#if defined(CONFIG_MACH_M2_REFRESHSPR)
 	unsigned int charging_mode;
 	unsigned long charging_fullcharged_time;
 	unsigned long charging_fullcharged_2nd_duration;
 #endif
+
+	/* power sharging cable */
+	int ps_enable;
+	int ps_status;
+	int ps_changed;
 };
 
 static char *supply_list[] = {
@@ -262,6 +269,11 @@ static enum power_supply_property sec_battery_props[] = {
 };
 
 static enum power_supply_property sec_power_props[] = {
+	POWER_SUPPLY_PROP_ONLINE,
+};
+
+static enum power_supply_property sec_ps_props[] = {
+	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_ONLINE,
 };
 
@@ -900,6 +912,109 @@ static int sec_ac_get_property(struct power_supply *ps,
 	}
 	pr_debug("%s : cable type = %d, return val = %d\n",
 	__func__, info->cable_type, val->intval);
+	return 0;
+}
+
+static int sec_ps_set_property(struct power_supply *ps,
+		enum power_supply_property psp,
+		const union power_supply_propval *val)
+{
+	struct sec_bat_info *info =
+		container_of(ps, struct sec_bat_info, psy_ps);
+	union power_supply_propval value;
+	struct power_supply *psy =
+		power_supply_get_by_name(info->charger_name);
+
+	switch (psp) {
+		case POWER_SUPPLY_PROP_STATUS:
+			if (val->intval == 0) {
+				if (info->ps_enable == true) {
+					info->ps_enable = val->intval;
+					pr_info("%s: power sharing cable set (%d)\n",
+						__func__, info->ps_enable);
+					value.intval = POWER_SUPPLY_CAPACITY_OTG_DISABLE;
+
+					psy->set_property(psy, POWER_SUPPLY_PROP_OTG, &value);
+				}
+			} else if ((val->intval ==1) && (info->ps_status == true)) {
+				info->ps_enable = val->intval;
+				pr_info("%s: power sharing cable set (%d)\n", __func__,
+					info->ps_enable);
+				value.intval = POWER_SUPPLY_CAPACITY_OTG_ENABLE;
+
+				psy->set_property(psy, POWER_SUPPLY_PROP_OTG, &value);
+			} else {
+				pr_err("%s: invalid setting (%d) ps_status (%d)\n",
+					__func__, val->intval, info->ps_status);
+			}
+			break;
+		case POWER_SUPPLY_PROP_ONLINE:
+			if (val->intval == POWER_SUPPLY_TYPE_POWER_SHARING) {
+				info->ps_status = true;
+				info->ps_changed = true;
+				info->ps_enable = true;
+
+				pr_info("%s: power sharing cable plugin (%d)\n",
+					__func__, info->ps_status);
+				wake_lock_timeout(&info->monitor_wake_lock, 5 * HZ);
+				queue_work(info->monitor_wqueue, &info->monitor_work);
+			} else {
+				info->ps_status = false;
+				pr_info("%s: power sharing cable plugout (%d)\n",
+					__func__, info->ps_status);
+				wake_lock_timeout(&info->monitor_wake_lock, 5 * HZ);
+				queue_work(info->monitor_wqueue, &info->monitor_work);
+			}
+			break;
+		default:
+			return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int sec_ps_get_property(struct power_supply *ps,
+		enum power_supply_property psp,
+		union power_supply_propval *val)
+{
+	struct sec_bat_info *info =
+		container_of(ps, struct sec_bat_info, psy_ps);
+	union power_supply_propval value;
+	struct power_supply *psy =
+		power_supply_get_by_name(info->charger_name);
+
+	switch (psp) {
+		case POWER_SUPPLY_PROP_STATUS:
+			if (info->ps_enable)
+				val->intval = 1;
+			else
+				val->intval = 0;
+			break;
+		case POWER_SUPPLY_PROP_ONLINE:
+			if (info->ps_status) {
+				if ((info->ps_enable == true) && (info->ps_changed == true)) {
+					info->ps_changed = false;
+
+					value.intval = POWER_SUPPLY_CAPACITY_OTG_ENABLE;
+					psy->set_property(psy, POWER_SUPPLY_PROP_OTG, &value);
+				}
+				val->intval = 1;
+			} else {
+				if (info->ps_enable == true) {
+					info->ps_enable = false;
+					pr_info("%s: power sharing cable disconnected! ps disable (%d)\n",
+						__func__, info->ps_enable);
+
+					value.intval = POWER_SUPPLY_CAPACITY_OTG_DISABLE;
+					psy->set_property(psy, POWER_SUPPLY_PROP_OTG, &value);
+				}
+				val->intval = 0;
+			}
+			break;
+		default:
+			return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -2167,7 +2282,7 @@ static struct device_attribute sec_battery_attrs[] = {
 	SEC_BATTERY_ATTR(batt_slate_mode),
 	SEC_BATTERY_ATTR(current_avg),
 	SEC_BATTERY_ATTR(factory_mode),
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) || defined(CONFIG_MACH_M2))
 	SEC_BATTERY_ATTR(siop_activated),
 	SEC_BATTERY_ATTR(siop_level),
 #endif
@@ -2223,7 +2338,7 @@ enum {
 	BATT_SLATE_MODE,
 	BATT_CURR_AVG,
 	BATT_FACTORY,
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) || defined(CONFIG_MACH_M2))
 	SIOP_ACTIVATED,
 	SIOP_LEVEL,
 #endif
@@ -2515,7 +2630,7 @@ static ssize_t sec_bat_show_property(struct device *dev,
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
 				   info->current_avg);
 		break;
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) ||  defined(CONFIG_MACH_M2))
 	case SIOP_ACTIVATED:
 		break;
 	case SIOP_LEVEL:
@@ -2760,7 +2875,7 @@ static ssize_t sec_bat_store(struct device *dev,
 		}
 		pr_info("[battery]:%s: factory mode = %d\n", __func__, x);
 		break;
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) || defined(CONFIG_MACH_M2))
 	case SIOP_ACTIVATED:
 		break;
 	case SIOP_LEVEL:
@@ -2926,6 +3041,14 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 	info->psy_ac.properties = sec_power_props,
 	info->psy_ac.num_properties = ARRAY_SIZE(sec_power_props),
 	info->psy_ac.get_property = sec_ac_get_property;
+	info->psy_ps.name = "ps",
+	info->psy_ps.type = POWER_SUPPLY_TYPE_POWER_SHARING,
+	info->psy_ps.supplied_to = supply_list,
+	info->psy_ps.num_supplicants = ARRAY_SIZE(supply_list),
+	info->psy_ps.properties = sec_ps_props,
+	info->psy_ps.num_properties = ARRAY_SIZE(sec_ps_props),
+	info->psy_ps.get_property = sec_ps_get_property;
+	info->psy_ps.set_property = sec_ps_set_property;
 
 	wake_lock_init(&info->vbus_wake_lock, WAKE_LOCK_SUSPEND,
 		       "vbus_present");
@@ -2974,12 +3097,18 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 #ifdef CONFIG_WIRELESS_CHARGING
 	info->wpc_charging_current = pdata->wpc_charging_current;
 #endif /*CONFIG_WIRELESS_CHARGING*/
-#if defined(CONFIG_MACH_M2_REFRESHSPR)
+
+#if (defined(CONFIG_MACH_M2_REFRESHSPR) || defined(CONFIG_MACH_M2))
 	info->siop_level = 100;
+#endif
+
+#if defined(CONFIG_MACH_M2_REFRESHSPR)
 	info->charging_fullcharged_2nd_duration = 40 * 60;
 	info->charging_fullcharged_time = 0;
 	info->charging_mode = SEC_BATTERY_CHARGING_NONE;
 #endif
+	info->ps_status= 0;
+	info->ps_changed= 0;
 
 	if (poweroff_charging)
 		info->lpm_chg_mode = true;
@@ -3083,12 +3212,18 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 		goto err_supply_unreg_usb;
 	}
 
+	ret = power_supply_register(&pdev->dev, &info->psy_ps);
+	if (ret) {
+		dev_err(info->dev, "%s: failed to register psy_ps\n", __func__);
+		goto err_supply_unreg_ac;
+	}
+
 	/* create sec detail attributes */
 	ret = sec_bat_create_attrs(info->psy_bat.dev);
 	if (ret) {
 		dev_err(info->dev, "%s: failed to create attrs\n",
 			__func__);
-		goto err_supply_unreg_ac;
+		goto err_supply_unreg_ps;
 	}
 
 	info->entry = create_proc_entry("batt_info_proc", S_IRUGO, NULL);
@@ -3103,7 +3238,7 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 	info->monitor_wqueue = create_freezable_workqueue(dev_name(&pdev->dev));
 	if (!info->monitor_wqueue) {
 		dev_err(info->dev, "%s: fail to create workqueue\n", __func__);
-		goto err_supply_unreg_ac;
+		goto err_supply_unreg_ps;
 	}
 
 #if defined(CONFIG_BATTERY_CTIA)
@@ -3162,6 +3297,8 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 
 /*err_request_irq:
 	destroy_workqueue(info->monitor_wqueue);*/
+err_supply_unreg_ps:
+	power_supply_unregister(&info->psy_ps);
 err_supply_unreg_ac:
 	power_supply_unregister(&info->psy_ac);
 err_supply_unreg_usb:
@@ -3224,7 +3361,7 @@ static int sec_bat_suspend(struct device *dev)
 	/*add alarm monitoring */
 	info->cur_monitor_time = alarm_get_elapsed_realtime();
 
-	if (info->cable_type == CABLE_TYPE_NONE) {
+	if ((info->cable_type == CABLE_TYPE_NONE) && (info->ps_enable != true)) {
 		sec_bat_monitoring_alarm(info, ALARM_INTERVAL);
 		info->slow_polling = 1;
 	} else {

@@ -20,7 +20,7 @@
  *      Notwithstanding the above, under no circumstances may you combine this
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
- * $Id: bcmutils.c 446873 2014-01-07 11:26:18Z $
+ * $Id: bcmutils.c 454884 2014-02-12 04:00:16Z $
  */
 
 #include <bcm_cfg.h>

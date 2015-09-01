@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_sdio.c 450840 2014-01-23 06:07:47Z $
+ * $Id: dhd_sdio.c 456607 2014-02-19 09:26:42Z $
  */
 
 #include <typedefs.h>
@@ -785,6 +785,7 @@ dhdsdio_sr_cap(dhd_bus_t *bus)
 			core_capext = FALSE;
 	} else if ((bus->sih->chip == BCM4335_CHIP_ID) ||
 		(bus->sih->chip == BCM4339_CHIP_ID) ||
+		(bus->sih->chip == BCM43349_CHIP_ID) ||
 		(bus->sih->chip == BCM4345_CHIP_ID) ||
 		(bus->sih->chip == BCM4354_CHIP_ID) ||
 		(bus->sih->chip == BCM4350_CHIP_ID)) {
@@ -801,6 +802,7 @@ dhdsdio_sr_cap(dhd_bus_t *bus)
 		cap = TRUE;
 	} else if ((bus->sih->chip == BCM4335_CHIP_ID) ||
 		(bus->sih->chip == BCM4339_CHIP_ID) ||
+		(bus->sih->chip == BCM43349_CHIP_ID) ||
 		(bus->sih->chip == BCM4345_CHIP_ID) ||
 		(bus->sih->chip == BCM4354_CHIP_ID) ||
 		(bus->sih->chip == BCM4350_CHIP_ID)) {
@@ -1873,7 +1875,7 @@ static int dhdsdio_txpkt_preprocess(dhd_bus_t *bus, void *pkt, int chan, int txs
 	/* align the data pointer, allocate a new packet if there is not enough space (new
 	 * packet data pointer will be aligned thus no padding will be needed)
 	 */
-	head_padding = (uint32)frame % DHD_SDALIGN;
+	head_padding = (ulong)frame % DHD_SDALIGN;
 	if (PKTHEADROOM(osh, pkt) < head_padding) {
 		head_padding = 0;
 		alloc_new_pkt = TRUE;
@@ -3639,7 +3641,7 @@ dhdsdio_doiovar(dhd_bus_t *bus, const bcm_iovar_t *vi, uint32 actionid, const ch
 
 		sd_ptr = (sdreg_t *)params;
 
-		addr = (uint32)bus->regs + sd_ptr->offset;
+		addr = (ulong)bus->regs + sd_ptr->offset;
 		size = sd_ptr->func;
 		int_val = (int32)bcmsdh_reg_read(bus->sdh, addr, size);
 		if (bcmsdh_regfail(bus->sdh))
@@ -3655,7 +3657,7 @@ dhdsdio_doiovar(dhd_bus_t *bus, const bcm_iovar_t *vi, uint32 actionid, const ch
 
 		sd_ptr = (sdreg_t *)params;
 
-		addr = (uint32)bus->regs + sd_ptr->offset;
+		addr = (ulong)bus->regs + sd_ptr->offset;
 		size = sd_ptr->func;
 		bcmsdh_reg_write(bus->sdh, addr, size, sd_ptr->value);
 		if (bcmsdh_regfail(bus->sdh))
@@ -6170,7 +6172,7 @@ dhdsdio_dpc(dhd_bus_t *bus)
 	}
 
 	if (intstatus & I_HMB_FC_STATE) {
-		DHD_ERROR(("Dongle reports HMB_FC_STATE\n"));
+		DHD_INFO(("Dongle reports HMB_FC_STATE\n"));
 		intstatus &= ~I_HMB_FC_STATE;
 	}
 
@@ -6984,6 +6986,8 @@ dhdsdio_chipmatch(uint16 chipid)
 		return TRUE;
 	if (chipid == BCM4339_CHIP_ID)
 		return TRUE;
+	if (chipid == BCM43349_CHIP_ID)
+		return TRUE;
 	if (chipid == BCM4345_CHIP_ID)
 		return TRUE;
 	if (chipid == BCM4350_CHIP_ID)
@@ -7637,6 +7641,7 @@ dhdsdio_probe_attach(struct dhd_bus *bus, osl_t *osh, void *sdh, void *regsva,
 			switch ((uint16)bus->sih->chip) {
 			case BCM4335_CHIP_ID:
 			case BCM4339_CHIP_ID:
+			case BCM43349_CHIP_ID:
 				bus->dongle_ram_base = CR4_4335_RAM_BASE;
 				break;
 			case BCM4350_CHIP_ID:
@@ -8573,10 +8578,10 @@ dhd_bus_devreset(dhd_pub_t *dhdp, uint8 flag)
 					bcmerror = dhd_bus_init((dhd_pub_t *) bus->dhd, FALSE);
 					if (bcmerror == BCME_OK) {
 #if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
+						dhd_enable_oob_intr(bus, TRUE);
 						bcmsdh_oob_intr_register(bus->sdh,
 							dhdsdio_isr, bus);
 						bcmsdh_oob_intr_set(bus->sdh, TRUE);
-						dhd_enable_oob_intr(bus, TRUE);
 #endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 
 						bus->dhd->dongle_reset = FALSE;
@@ -8801,6 +8806,38 @@ concate_revision_bcm4339
 	return 0;
 }
 
+static int
+concate_revision_bcm43349
+	(dhd_bus_t *bus, char *fw_path, int fw_path_len, char *nv_path, int nv_path_len)
+{
+
+	uint chipver;
+#if defined(SUPPORT_MULTIPLE_CHIPS)
+	char chipver_tag[10] = "_43349";
+#else
+	char chipver_tag[4] = {0, };
+#endif /* defined(SUPPORT_MULTIPLE_CHIPS) */
+
+	DHD_TRACE(("%s: BCM43349 Multiple Revision Check\n", __FUNCTION__));
+	if (bus->sih->chip != BCM43349_CHIP_ID) {
+		DHD_ERROR(("%s:Chip is not BCM43349\n", __FUNCTION__));
+		return -1;
+	}
+	chipver = bus->sih->chiprev;
+	DHD_ERROR(("CHIP VER = [0x%x]\n", chipver));
+	if (chipver == 0x1) {
+		DHD_ERROR(("----- CHIP bcm43349_A0 -----\n"));
+		strcat(chipver_tag, "_a0");
+	} else {
+		DHD_ERROR(("----- CHIP bcm43349 unknown revision %d -----\n",
+			chipver));
+	}
+
+	strcat(fw_path, chipver_tag);
+	strcat(nv_path, chipver_tag);
+	return 0;
+}
+
 static int concate_revision_bcm43241(dhd_bus_t *bus,
 	char *fw_path, int fw_path_len, char *nv_path, int nv_path_len)
 {
@@ -8923,6 +8960,10 @@ concate_revision(dhd_bus_t *bus, char *fw_path, int fw_path_len, char *nv_path, 
 		break;
 	case BCM4339_CHIP_ID:
 		res = concate_revision_bcm4339(bus, fw_path, fw_path_len,
+			nv_path, nv_path_len);
+		break;
+	case BCM43349_CHIP_ID:
+		res = concate_revision_bcm43349(bus, fw_path, fw_path_len,
 			nv_path, nv_path_len);
 		break;
 	case BCM4324_CHIP_ID:

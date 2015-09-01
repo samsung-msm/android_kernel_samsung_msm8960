@@ -172,6 +172,7 @@ enum power_supply_type {
 #if defined(CONFIG_MACH_SERRANO) || defined(CONFIG_MACH_CANE)
 	POWER_SUPPLY_TYPE_DESK_DOCK,
 #endif
+	POWER_SUPPLY_TYPE_POWER_SHARING,		/* power sharing clable, 14 */
 };
 
 /*

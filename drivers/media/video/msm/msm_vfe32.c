@@ -3088,7 +3088,7 @@ static void vfe32_process_output_path_irq_0(void)
 		vfe32_ctrl->outpath.out0.frame_drop_cnt++;
 		CDBG("path_irq_0 - no free buffer!\n");
 		if (no_free_buffer_flag == 0)
-		    pr_warn("Waiting output 0 buffer."
+		    CDBG("Waiting output 0 buffer."
 			    " but it doesn't matter.\n");
 	}
 }

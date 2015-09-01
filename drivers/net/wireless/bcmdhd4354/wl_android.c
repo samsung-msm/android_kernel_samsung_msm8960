@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: wl_android.c 451555 2014-01-27 06:38:40Z $
+ * $Id: wl_android.c 459882 2014-03-05 07:26:15Z $
  */
 
 #include <linux/module.h>
@@ -111,6 +111,7 @@
 #define CMD_TEST_SET_TX_POWER		"TEST_SET_TX_POWER"
 #define CMD_TEST_GET_TX_POWER		"TEST_GET_TX_POWER"
 #endif /* TEST_TX_POWER_CONTROL */
+#define CMD_SARLIMIT_TX_CONTROL		"SET_TX_POWER_CALLING"
 #endif /* CUSTOMER_HW4 */
 #ifdef WLFBT
 #define CMD_GET_FTKEY      "GET_FTKEY"
@@ -267,7 +268,11 @@ struct io_cfg {
 };
 
 typedef struct android_wifi_priv_cmd {
-	char *buf;
+#ifdef CONFIG_64BIT
+	u64 bufaddr;
+#else
+	char *bufaddr;
+#endif
 	int used_len;
 	int total_len;
 } android_wifi_priv_cmd;
@@ -331,7 +336,6 @@ static struct genl_multicast_group wl_genl_mcast = {
  */
 int dhd_net_bus_devreset(struct net_device *dev, uint8 flag);
 int dhd_dev_init_ioctl(struct net_device *dev);
-extern int wl_cfg80211_get_ioctl_version(void);
 #ifdef WL_CFG80211
 int wl_cfg80211_get_p2p_dev_addr(struct net_device *net, struct ether_addr *p2pdev_addr);
 int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, dhd_pub_t *dhd, char *command);
@@ -357,6 +361,9 @@ extern int set_roamscan_mode(struct net_device *dev, int mode);
 extern int get_roamscan_channel_list(struct net_device *dev, unsigned char channels[]);
 extern int set_roamscan_channel_list(struct net_device *dev, unsigned char n,
 	unsigned char channels[], int ioctl_ver);
+#endif
+#if defined(CUSTOMER_HW4) && defined(ROAM_CHANNEL_CACHE)
+extern void wl_update_roamscan_cache_by_band(struct net_device *dev, int band);
 #endif
 
 #ifdef ENABLE_4335BT_WAR
@@ -2001,22 +2008,22 @@ static int
 wl_android_set_tx_power(struct net_device *dev, const char* string_num)
 {
 	int err = 0;
-	s32 mw;
+	s32 dbm;
 	enum nl80211_tx_power_setting type;
 
-	mw = bcm_atoi(string_num);
+	dbm = bcm_atoi(string_num);
 
-	if (mw < -1) {
+	if (dbm < -1) {
 		DHD_ERROR(("%s: dbm is negative...\n", __FUNCTION__));
 		return -EINVAL;
 	}
 
-	if (mw == -1)
+	if (dbm == -1)
 		type = NL80211_TX_POWER_AUTOMATIC;
 	else
 		type = NL80211_TX_POWER_FIXED;
 
-	err = wl_set_tx_power(dev, type, mw);
+	err = wl_set_tx_power(dev, type, dbm);
 	if (unlikely(err)) {
 		DHD_ERROR(("%s: error (%d)\n", __FUNCTION__, err));
 		return err;
@@ -2030,22 +2037,50 @@ wl_android_get_tx_power(struct net_device *dev, char *command, int total_len)
 {
 	int err;
 	int bytes_written;
-	s32 mw = 0;
+	s32 dbm = 0;
 
-	err = wl_get_tx_power(dev, &mw);
+	err = wl_get_tx_power(dev, &dbm);
 	if (unlikely(err)) {
 		DHD_ERROR(("%s: error (%d)\n", __FUNCTION__, err));
 		return err;
 	}
 
 	bytes_written = snprintf(command, total_len, "%s %d",
-		CMD_TEST_GET_TX_POWER, mw);
+		CMD_TEST_GET_TX_POWER, dbm);
 
-	DHD_ERROR(("%s: GET_TX_POWER: mW=%d\n", __FUNCTION__, mw));
+	DHD_ERROR(("%s: GET_TX_POWER: dBm=%d\n", __FUNCTION__, dbm));
 
 	return bytes_written;
 }
 #endif /* TEST_TX_POWER_CONTROL */
+
+static int
+wl_android_set_sarlimit_txctrl(struct net_device *dev, const char* string_num)
+{
+	int err = 0;
+	int setval = 0;
+	s32 mode = bcm_atoi(string_num);
+
+	/* As Samsung specific and their requirement, '0' means activate sarlimit
+	 * and '-1' means back to normal state (deactivate sarlimit)
+	 */
+	if (mode == 0) {
+		DHD_INFO(("%s: SAR limit control activated\n", __FUNCTION__));
+		setval = 1;
+	} else if (mode == -1) {
+		DHD_INFO(("%s: SAR limit control deactivated\n", __FUNCTION__));
+		setval = 0;
+	} else {
+		return -EINVAL;
+	}
+
+	err = wldev_iovar_setint(dev, "sar_enable", setval);
+	if (unlikely(err)) {
+		DHD_ERROR(("%s: error (%d)\n", __FUNCTION__, err));
+		return err;
+	}
+	return 1;
+}
 #endif /* CUSTOMER_HW4 */
 
 int wl_android_set_roam_mode(struct net_device *dev, char *command, int total_len)
@@ -2400,7 +2435,17 @@ wl_android_set_miracast(struct net_device *dev, char *command, int total_len)
 	case MIRACAST_MODE_SOURCE:
 		/* setting mchan_algo to platform specific value */
 		config.iovar = "mchan_algo";
-		config.param = MIRACAST_MCHAN_ALGO;
+
+		ret = wldev_ioctl(dev, WLC_GET_BCNPRD, &val, sizeof(int), false);
+		if (!ret && val > 100) {
+			config.param = 0;
+			DHD_ERROR(("%s: Connected station's beacon interval: "
+				"%d and set mchan_algo to %d \n",
+				__FUNCTION__, val, config.param));
+		}
+		else {
+			config.param = MIRACAST_MCHAN_ALGO;
+		}
 		ret = wl_android_iolist_add(dev, &miracast_resume_list, &config);
 		if (ret)
 			goto resume;
@@ -2504,7 +2549,7 @@ static void wl_netlink_deinit(void)
 }
 
 s32
-wl_netlink_send_msg(int pid, int seq, void *data, int size)
+wl_netlink_send_msg(int pid, int seq, void *data, size_t size)
 {
 	struct sk_buff *skb = NULL;
 	struct nlmsghdr *nlh = NULL;
@@ -2522,6 +2567,13 @@ wl_netlink_send_msg(int pid, int seq, void *data, int size)
 	}
 
 	nlh = nlmsg_put(skb, 0, 0, 0, size, 0);
+	if (nlh == NULL) {
+		WL_ERR(("failed to build nlmsg, skb_tailroom:%d, nlmsg_total_size:%d\n",
+			skb_tailroom(skb), nlmsg_total_size(size)));
+		dev_kfree_skb(skb);
+		goto nlmsg_failure;
+	}
+
 	memcpy(nlmsg_data(nlh), data, size);
 	nlh->nlmsg_seq = seq;
 
@@ -2844,6 +2896,7 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 #define PRIVATE_COMMAND_MAX_LEN	8192
 	int ret = 0;
 	char *command = NULL;
+	char *buf = NULL;
 	int bytes_written = 0;
 	android_wifi_priv_cmd priv_cmd;
 
@@ -2870,7 +2923,8 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		ret = -ENOMEM;
 		goto exit;
 	}
-	if (copy_from_user(command, priv_cmd.buf, priv_cmd.total_len)) {
+	buf = (char *)priv_cmd.bufaddr;
+	if (copy_from_user(command, buf, priv_cmd.total_len)) {
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2978,6 +3032,9 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 #else
 		bytes_written = wldev_set_band(net, band);
 #endif /* WL_HOST_BAND_MGMT */
+#if defined(CUSTOMER_HW4) && defined(ROAM_CHANNEL_CACHE)
+		wl_update_roamscan_cache_by_band(net, band);
+#endif
 	}
 	else if (strnicmp(command, CMD_GETBAND, strlen(CMD_GETBAND)) == 0) {
 		bytes_written = wl_android_get_band(net, command, priv_cmd.total_len);
@@ -3267,6 +3324,11 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		wl_android_get_tx_power(net, command, priv_cmd.total_len);
 	}
 #endif /* TEST_TX_POWER_CONTROL */
+	else if (strnicmp(command, CMD_SARLIMIT_TX_CONTROL,
+		strlen(CMD_SARLIMIT_TX_CONTROL)) == 0) {
+		int skip = strlen(CMD_SARLIMIT_TX_CONTROL) + 1;
+		wl_android_set_sarlimit_txctrl(net, (const char*)command+skip);
+	}
 #endif /* CUSTOMER_HW4 */
 	else if (strnicmp(command, CMD_HAPD_MAC_FILTER, strlen(CMD_HAPD_MAC_FILTER)) == 0) {
 		int skip = strlen(CMD_HAPD_MAC_FILTER) + 1;
@@ -3326,7 +3388,7 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 			bytes_written++;
 		}
 		priv_cmd.used_len = bytes_written;
-		if (copy_to_user(priv_cmd.buf, command, bytes_written)) {
+		if (copy_to_user(buf, command, bytes_written)) {
 			DHD_ERROR(("%s: failed to copy data to user buffer\n", __FUNCTION__));
 			ret = -EFAULT;
 		}

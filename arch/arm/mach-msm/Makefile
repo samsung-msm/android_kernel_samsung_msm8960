@@ -476,7 +476,7 @@ obj-$(CONFIG_MACH_SERRANO) += msm8930-thermistor.o
 obj-$(CONFIG_MACH_LT02) += msm8930-thermistor.o
 obj-$(CONFIG_MACH_GOLDEN) += msm8930-thermistor.o
 obj-$(CONFIG_MACH_JF) += fusion3-thermistor.o
-obj-$(CONFIG_MACH_M2_REFRESHSPR) += midas-thermistor.o
+obj-$(CONFIG_MACH_M2) += midas-thermistor.o
 endif
 
 

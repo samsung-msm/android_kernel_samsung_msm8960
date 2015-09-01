@@ -1249,8 +1249,9 @@ static void msm_otg_start_host(struct usb_otg *otg, int on)
 	} else if (on == 0) {
 		motg->ndev.mode = NOTIFY_NONE_MODE;
 #if defined(CONFIG_SEC_PRODUCT_8960)
-		if (!motg->smartdock)
-			host_state_notify(&motg->ndev, NOTIFY_HOST_REMOVE);
+        if (!motg->smartdock)
+		    host_state_notify(&motg->ndev, NOTIFY_HOST_REMOVE);
+	motg->smartdock = false;
 #endif
 	}
 #endif
@@ -3330,6 +3331,9 @@ void msm_otg_set_smartdock_state(bool online)
 	if (online) {
 		dev_info(motg->phy.dev, "SMARTDOCK : ID set\n");
 		motg->smartdock = false;
+#if defined (CONFIG_SEC_PRODUCT_8960)
+		motg->smartdock = true;
+#endif
 		set_bit(ID, &motg->inputs);
 	} else {
 		dev_info(motg->phy.dev, "SMARTDOCK : ID clear\n");
